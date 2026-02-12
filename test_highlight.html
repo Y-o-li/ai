@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>煽动性语言检测 - 高亮效果测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 3px solid #ddd;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .normal-text {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 煽动性语言检测 - 高亮效果测试页面</h1>
+    
+    <div class="test-section">
+        <h2>📝 测试文本</h2>
+        <p>这个页面包含了各种类型的文本，用于测试高亮显示效果。</p>
+        
+        <div class="test-case">
+            <h3>正常文本（不应该被标记）</h3>
+            <p class="normal-text">
+                这是一段正常的文本内容，包含了常见的日常用语和表达方式。
+                我们可以在这里测试一下正常的段落显示效果，确保不会被误判。
+            </p>
+        </div>
+        
+        <div class="test-case">
+            <h3>包含煽动性词汇的文本（应该被标记）</h3>
+            <p class="normal-text">
+                这段话包含了我们要推翻政府的关键词，还有一些暴力冲突的描述。
+                我们希望这些内容能够被正确识别并高亮显示，同时保持原有的排版布局。
+            </p>
+        </div>
+        
+        <div class="test-case">
+            <h3>混合文本</h3>
+            <p class="normal-text">
+                在正常讨论中，有人可能会提到一些敏感词汇如暗杀或恐怖袭击，
+                但是在合法的语境下，我们需要确保检测算法的准确性。
+                同时，革命和造反这些词汇也需要仔细分析上下文。
+            </p>
+        </div>
+        
+        <div class="test-case">
+            <h3>不同格式的内容</h3>
+            <ul>
+                <li>列表项中的<strong>暴力</strong>内容</li>
+                <li>引用内容："我们要<em>血洗</em>敌人"</li>
+                <li>链接文本：关于<code>颠覆</code>的讨论</li>
+            </ul>
+        </div>
+        
+        <div class="test-case">
+            <h3>长文本内容</h3>
+            <p class="normal-text">
+                这是一段较长的文本内容，用于测试在复杂段落中高亮显示的效果。
+                文本中包含了多个可能触发检测的词汇，比如推翻、暴力和恐怖袭击等。
+                我们需要确保在这些复杂情况下，高亮显示仍然能够正常工作，
+                而且不会破坏原有的文字排版和页面布局。这对于用户体验来说非常重要。
+            </p>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 使用说明</h2>
+        <ol>
+            <li><strong>启动后端服务</strong>：双击运行 <code>启动API.bat</code></li>
+            <li><strong>加载插件</strong>：在Chrome中加载 <code>frontend-extension/browser_extension</code> 文件夹</li>
+            <li><strong>测试效果</strong>：观察本页面中的红色高亮标记</li>
+            <li><strong>检查排版</strong>：确认高亮后文本布局没有明显变化</li>
+        </ol>
+        
+        <h3>💡 如果排版出现问题</h3>
+        <p>请参考 <code>alternative_highlight.js</code> 文件中的备选方案，替换高亮函数。</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 预期效果</h2>
+        <p>正常情况下，你应该看到：</p>
+        <ul>
+            <li>✅ 包含煽动性词汇的文本被红色背景标记</li>
+            <li>✅ 正常文本保持原样，没有被标记</li>
+            <li>✅ 文本的排版和布局保持稳定</li>
+            <li>✅ 鼠标悬停在高亮文本上显示置信度信息</li>
+        </ul>
+    </div>
+</body>
+</html>

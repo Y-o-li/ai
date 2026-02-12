@@ -1,0 +1,75 @@
+{
+  "manifest_version": 3,
+  "name": "言之有理 - AI内容分析助手 v2",
+  "version": "3.0.0",
+  "description": "智能识别煽动性语言、事实核查、语义总结和中性化改写",
+  "author": "Yanzhi Youli Team",
+  "homepage_url": "https://github.com/your-repo/yanzhi-youli",
+  
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "32": "assets/icons/icon32.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
+    },
+    "default_title": "言之有理 - AI内容分析助手"
+  },
+  
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "content/content-script.js"
+      ],
+      "css": ["styles/extension.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  
+  "options_page": "options/options.html",
+  
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "32": "assets/icons/icon32.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/sensitive_words.json",
+        "styles/extension.css",
+        "lib/utils.js",
+        "content/highlight.js",
+        "ui/toolbar.js",
+        "ui/result-card.js",
+        "content/selection-handler.js",
+        "content/content-script.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
