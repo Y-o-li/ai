@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>煽动性内容检测 - 测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: #1a1a1a;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #1890ff;
+        }
+        
+        h2 {
+            font-size: 20px;
+            color: #2c3e50;
+            margin: 30px 0 15px 0;
+            padding-left: 12px;
+            border-left: 4px solid #1890ff;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .highlight-section {
+            background: #fffbe6;
+            border: 1px dashed #faad14;
+        }
+        
+        .neutral-section {
+            background: #f0f9eb;
+            border: 1px dashed #52c41a;
+        }
+        
+        .mixed-section {
+            background: #fff1f0;
+            border: 1px dashed #ff4d4f;
+        }
+        
+        .instruction {
+            background: #e6f7ff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #1890ff;
+        }
+        
+        .instruction h3 {
+            color: #1890ff;
+            margin-bottom: 10px;
+        }
+        
+        .instruction ul {
+            margin-left: 20px;
+            color: #555;
+        }
+        
+        .instruction li {
+            margin: 5px 0;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+            text-indent: 2em;
+        }
+        
+        .short-text {
+            text-indent: 0;
+        }
+        
+        .test-cases {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .test-case {
+            padding: 12px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 6px;
+            border-left: 3px solid #d9d9d9;
+            font-size: 14px;
+        }
+        
+        .test-case strong {
+            color: #1890ff;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e8e8e8;
+            color: #999;
+            font-size: 13px;
+            text-align: center;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 8px;
+            font-weight: 500;
+        }
+        
+        .badge-high {
+            background: #fff1f0;
+            color: #ff4d4f;
+            border: 1px solid #ffccc7;
+        }
+        
+        .badge-medium {
+            background: #fffbe6;
+            color: #faad14;
+            border: 1px solid #ffe58f;
+        }
+        
+        .badge-normal {
+            background: #f0f9eb;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 煽动性内容检测插件 - 测试页面</h1>
+        
+        <div class="instruction">
+            <h3>📋 测试说明</h3>
+            <ul>
+                <li>确保已加载你的 Chrome 插件</li>
+                <li><strong>本地高亮测试</strong>：观察页面加载后，煽动性词汇是否被自动标红</li>
+                <li><strong>大模型功能测试</strong>：选中任意文本，点击悬浮工具栏的按钮（事实核查/语义总结/中性化改写）</li>
+                <li>建议先用 <strong>Mock API</strong> 测试功能流程，再用真实 API 验证效果</li>
+            </ul>
+        </div>
+        
+        <h2>🔥 高风险煽动性内容</h2>
+        <div class="section highlight-section">
+            <p>我们必须<b>全面封杀</b>这些邪恶的媒体，他们每天都在<b>妖魔化</b>我们伟大的国家！大家要<b>揭竿而起</b>，用暴力手段<b>消灭</b>所有反对者！</p>
+            <p class="short-text">这群<b>卖国贼</b>、<b>汉奸</b>、<b>走狗</b>必须<b>血债血偿</b>！我们要<b>清算</b>他们的<b>罪行</b>！</p>
+            <p>那些<b>反华势力</b>、<b>境外势力</b>正在<b>渗透</b>我们的社会，企图<b>颠覆</b>政权。我们必须<b>坚决斗争</b>，不能有任何妥协！</p>
+        </div>
+        
+        <h2>⚠️ 中等风险煽动性内容</h2>
+        <div class="section mixed-section">
+            <p class="short-text">这种<b>极端</b>的观点简直不可理喻，完全是<b>妖言惑众</b>！</p>
+            <p>我们应该<b>抵制</b>这些<b>恶意</b>报道，不要让他们<b>煽风点火</b>。但是我们可以通过<b>理性讨论</b>来表达不同意见。</p>
+            <p class="short-text">这群<b>暴徒</b>的行为令人发指，必须受到<b>严惩</b>！</p>
+        </div>
+        
+        <h2>✅ 正常中性内容</h2>
+        <div class="section neutral-section">
+            <p>近年来，随着科技的快速发展，人工智能技术已经深入到我们生活的方方面面。从智能语音助手到自动驾驶汽车，AI 正在改变着我们的生活方式。</p>
+            <p>教育是立国之本，人才培养是社会发展的重要基础。我们应该重视教育事业的发展，为下一代创造更好的学习环境和成长机会。</p>
+            <p class="short-text">今天天气真好，适合出去散步。公园里的花开得很漂亮，很多家庭带着孩子在玩耍，一片祥和的景象。</p>
+            <p>在全球化时代，各国之间的经济文化交流日益频繁。通过合作共赢的方式，我们可以共同应对气候变化、疫情防控等全球性挑战。</p>
+        </div>
+        
+        <h2>🧪 特定测试用例（选中测试）</h2>
+        <div class="test-cases">
+            <div class="test-case">
+                <span class="badge badge-high">高风险</span>
+                <strong>事实核查测试</strong>：<span class="test-text">国外媒体声称我国疫苗存在严重安全隐患，这是典型的妖魔化行为！</span>
+            </div>
+            <div class="test-case">
+                <span class="badge badge-medium">中等</span>
+                <strong>语义总结测试</strong>：<span class="test-text">由于对某项政策的不满，部分网友在网络上发表了一些过激言论，有人呼吁要抵制相关产品，也有人建议通过合法渠道表达诉求。这一事件引发了广泛讨论，各方观点不一。</span>
+            </div>
+            <div class="test-case">
+                <span class="badge badge-high">高风险</span>
+                <strong>中性化改写测试</strong>：<span class="test-text">这群卖国贼必须被清算！他们背叛了国家和人民，罪大恶极，应该受到最严厉的惩罚！</span>
+            </div>
+            <div class="test-case">
+                <span class="badge badge-normal">正常</span>
+                <strong>正常文本测试</strong>：<span class="test-text">今年上半年，我国新能源汽车销量持续增长，同比增长超过50%。多家车企推出了新的电动车型，技术水平和续航里程都有显著提升。</span>
+            </div>
+            <div class="test-case">
+                <span class="badge badge-high">高风险</span>
+                <strong>长文本事实核查</strong>：<span class="test-text">据某媒体报道，我国某重要科研项目涉嫌数据造假，大量研究成果都是抄袭国外学者的。该媒体还声称国内学术界普遍存在学术不端行为，监管严重缺失。这些所谓的"爆料"在社交媒体上引发了广泛关注和讨论。</span>
+            </div>
+        </div>
+        
+        <h2>📝 更多测试段落</h2>
+        <div class="section">
+            <p>气候变化是当今世界面临的重大挑战之一。各国政府、企业和个人都应该积极行动起来，减少温室气体排放，推动绿色低碳发展。这不仅关系到我们这一代的福祉，更关系到子孙后代的未来。</p>
+            <p>疫情期间，医护人员奋战在抗疫一线，无私奉献。他们是新时代的英雄，值得我们尊敬和感谢。同时，普通民众也积极配合防控措施，展现了良好的公民素质。</p>
+            <p>随着5G技术的普及，远程办公、在线教育等新业态快速发展。这不仅提高了工作效率，也为人们的学习和生活带来了便利。数字化时代的到来，正在重塑我们的社会结构和商业模式。</p>
+        </div>
+        
+        <div class="footer">
+            <p>本测试页面仅用于插件功能测试，所含煽动性内容为模拟数据，不代表任何真实观点。</p>
+        </div>
+    </div>
+    
+    <script>
+        // 可选：添加一些交互提示，方便测试
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 测试页面已加载');
+            console.log('📌 提示：选中任意文本后，应该会看到插件的工具栏');
+            console.log('✨ 检查页面是否自动高亮了煽动性词汇');
+            
+            // 统计页面中的敏感词数量（用于验证）
+            const sensitivePatterns = [
+                '封杀', '妖魔化', '揭竿而起', '消灭', 
+                '卖国贼', '汉奸', '走狗', '血债血偿',
+                '清算', '反华势力', '境外势力', '渗透',
+                '颠覆', '极端', '妖言惑众', '抵制', '煽风点火',
+                '暴徒', '严惩'
+            ];
+            
+            let totalCount = 0;
+            const bodyText = document.body.innerText;
+            
+            sensitivePatterns.forEach(word => {
+                const count = (bodyText.match(new RegExp(word, 'g')) || []).length;
+                if (count > 0) {
+                    console.log(`敏感词 "${word}": ${count} 处`);
+                    totalCount += count;
+                }
+            });
+            
+            console.log(`🔍 预计应高亮敏感词总数: ${totalCount} 处`);
+        });
+    </script>
+</body>
+</html>

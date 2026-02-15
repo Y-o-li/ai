@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>言之有理 - 设置</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="logo">
+                <img src="../assets/icons/icon48.png" alt="logo">
+                <h1>言之有理 <span class="version">v2.0</span></h1>
+            </div>
+            <p class="subtitle">AI内容分析与事实核查工具</p>
+        </header>
+
+        <!-- 主要内容 -->
+        <main class="main-content">
+            <!-- API配置区域 -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="icon">🔑</span>
+                    API配置
+                </h2>
+                
+                <div class="form-group">
+                    <label for="provider">选择AI提供商</label>
+                    <select id="provider" class="select-field">
+                        <option value="qwen">通义千问 (阿里云)</option>
+                        <option value="glm">智谱GLM</option>
+                        <option value="wenxin">文心一言 (百度)</option>
+                    </select>
+                    <p class="help-text">请选择您要使用的国内大模型服务</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="model">模型版本</label>
+                    <select id="model" class="select-field">
+                        <option value="qwen-turbo">qwen-turbo (推荐)</option>
+                        <option value="qwen-plus">qwen-plus</option>
+                        <option value="qwen-max">qwen-max</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="apiKey">API Key</label>
+                    <div class="input-group">
+                        <input type="password" id="apiKey" class="input-field" placeholder="请输入您的API Key">
+                        <button type="button" id="toggleKey" class="btn-icon" title="显示/隐藏">👁</button>
+                    </div>
+                    <p class="help-text" id="keyHelp">
+                        您的API Key将安全地存储在本地，不会上传到任何服务器
+                    </p>
+                </div>
+
+                <div class="form-group" id="secretKeyGroup" style="display: none;">
+                    <label for="secretKey">Secret Key (文心一言需要)</label>
+                    <div class="input-group">
+                        <input type="password" id="secretKey" class="input-field" placeholder="请输入Secret Key">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="testBtn" class="btn btn-secondary">
+                        <span class="btn-icon">🧪</span>
+                        测试连接
+                    </button>
+                    <span id="testResult" class="test-result"></span>
+                </div>
+            </section>
+
+            <!-- 功能开关区域 -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="icon">⚙️</span>
+                    功能设置
+                </h2>
+
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <div class="feature-info">
+                            <h3>🔍 煽动性语言检测</h3>
+                            <p>自动检测并高亮网页中的煽动性词汇（本地处理，无需API）</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="enableHighlight" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-info">
+                            <h3>✓ 事实核查</h3>
+                            <p>对用户选中的文本进行事实准确性分析</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="enableFactCheck" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-info">
+                            <h3>☰ 语义总结</h3>
+                            <p>对用户选中的长文本生成简洁摘要</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="enableSummarize" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-info">
+                            <h3>◐ 中性化改写</h3>
+                            <p>将情绪化文本改写为客观中性的表达</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="enableNeutralize" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-info">
+                            <h3>📌 始终显示工具栏</h3>
+                            <p>工具栏常驻显示，无需选中文本即可使用（开启后可能会遮挡页面内容）</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="alwaysShowToolbar">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 使用说明 -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="icon">📖</span>
+                    使用说明
+                </h2>
+                
+                <div class="instructions">
+                    <div class="instruction-item">
+                        <span class="step">1</span>
+                        <p>在上方配置您的API Key，点击"测试连接"验证配置是否正确</p>
+                    </div>
+                    <div class="instruction-item">
+                        <span class="step">2</span>
+                        <p>浏览网页时，煽动性词汇会自动高亮显示</p>
+                    </div>
+                    <div class="instruction-item">
+                        <span class="step">3</span>
+                        <p>选中任意文本，浮动工具栏会出现，可选择事实核查、语义总结或中性化改写（可开启"始终显示工具栏"选项）</p>
+                    </div>
+                    <div class="instruction-item">
+                        <span class="step">4</span>
+                        <p>处理结果将以卡片形式展示，支持一键复制</p>
+                    </div>
+                </div>
+
+                <div class="api-links">
+                    <p>获取API Key：</p>
+                    <a href="https://dashscope.aliyun.com/" target="_blank" class="link">通义千问</a>
+                    <a href="https://open.bigmodel.cn/" target="_blank" class="link">智谱GLM</a>
+                    <a href="https://cloud.baidu.com/product/wenxinworkshop" target="_blank" class="link">文心一言</a>
+                </div>
+            </section>
+        </main>
+
+        <!-- 底部操作栏 -->
+        <footer class="footer">
+            <button type="button" id="resetBtn" class="btn btn-text">恢复默认</button>
+            <button type="button" id="saveBtn" class="btn btn-primary">
+                <span class="btn-icon">💾</span>
+                保存设置
+            </button>
+        </footer>
+    </div>
+
+    <!-- 提示消息 -->
+    <div id="toast" class="toast"></div>
+
+    <script src="options.js"></script>
+</body>
+</html>
