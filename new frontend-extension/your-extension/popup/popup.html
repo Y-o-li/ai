@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>言之有理</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup-container">
+        <!-- 头部 -->
+        <header class="popup-header">
+            <div class="brand">
+                <img src="../assets/icons/icon32.png" alt="logo" class="logo">
+                <div class="brand-text">
+                    <h1>言之有理</h1>
+                    <span class="tagline">AI内容分析助手</span>
+                </div>
+            </div>
+            <div class="status-indicator" id="statusIndicator" title="API连接状态">
+                <span class="status-dot"></span>
+            </div>
+        </header>
+
+        <!-- 统计信息 -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-value" id="highlightCount">0</span>
+                <span class="stat-label">已检测</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-value" id="processCount">0</span>
+                <span class="stat-label">已处理</span>
+            </div>
+        </div>
+
+        <!-- 功能开关 -->
+        <div class="features-section">
+            <h3 class="section-title">功能开关</h3>
+            
+            <div class="feature-toggle">
+                <div class="toggle-info">
+                    <span class="toggle-icon">🔍</span>
+                    <span class="toggle-label">煽动性检测</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="toggleHighlight" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="feature-toggle">
+                <div class="toggle-info">
+                    <span class="toggle-icon">✓</span>
+                    <span class="toggle-label">事实核查</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="toggleFactCheck" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="feature-toggle">
+                <div class="toggle-info">
+                    <span class="toggle-icon">☰</span>
+                    <span class="toggle-label">语义总结</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="toggleSummarize" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="feature-toggle">
+                <div class="toggle-info">
+                    <span class="toggle-icon">◐</span>
+                    <span class="toggle-label">中性化改写</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="toggleNeutralize" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="actions-section">
+            <button id="rescanBtn" class="btn btn-primary">
+                <span class="btn-icon">🔄</span>
+                重新扫描页面
+            </button>
+            
+            <button id="settingsBtn" class="btn btn-secondary">
+                <span class="btn-icon">⚙️</span>
+                打开设置
+            </button>
+
+            <button id="historyBtn" class="btn btn-secondary">
+                <span class="btn-icon">📚</span>
+                历史记录
+            </button>
+        </div>
+
+        <!-- 底部信息 -->
+        <footer class="popup-footer">
+            <p class="hint">💡 选中网页文本即可使用AI分析功能</p>
+            <a href="#" id="helpLink" class="help-link">使用帮助</a>
+        </footer>
+    </div>
+
+    <!-- 状态提示 -->
+    <div id="statusMessage" class="status-message"></div>
+
+    <script src="../lib/history-manager.js"></script>
+
+    <script src="popup.js"></script>
+</body>
+</html>

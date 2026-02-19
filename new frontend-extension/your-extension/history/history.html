@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>言之有理 - 历史记录</title>
+    <link rel="stylesheet" href="history.css">
+</head>
+<body>
+    <div class="history-container">
+        <!-- 头部 -->
+        <header class="history-header">
+            <h1>📚 历史记录</h1>
+            <div class="header-actions">
+                <button id="exportBtn" class="btn btn-secondary">📤 导出</button>
+                <button id="clearBtn" class="btn btn-danger">🗑️ 清空</button>
+            </div>
+        </header>
+
+        <!-- 筛选栏 -->
+        <div class="filter-bar">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-type="all">全部</button>
+                <button class="filter-tab" data-type="factCheck">✓ 事实核查</button>
+                <button class="filter-tab" data-type="summarize">☰ 语义总结</button>
+                <button class="filter-tab" data-type="neutralize">◐ 中性化改写</button>
+                <button class="filter-tab" data-type="favorite">⭐ 收藏</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索历史记录...">
+                <button id="searchBtn">🔍</button>
+            </div>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="stats-info">
+            <span>总计 <span id="totalCount">0</span> 条记录</span>
+        </div>
+
+        <!-- 历史记录列表 -->
+        <div id="historyList" class="history-list">
+            <!-- 记录会动态插入这里 -->
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+
+    <!-- 详情弹窗 -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">记录详情</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-section">
+                    <h3>原文</h3>
+                    <div id="modalOriginal" class="detail-text"></div>
+                </div>
+                <div class="detail-section">
+                    <h3>结果</h3>
+                    <div id="modalResult" class="detail-text"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="modalCopyBtn" class="btn btn-primary">📋 复制结果</button>
+                <button id="modalReuseBtn" class="btn btn-secondary">🔄 重新分析</button>
+                <button id="modalDeleteBtn" class="btn btn-danger">🗑️ 删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../lib/history-manager.js"></script>
+    <script src="history.js"></script>
+</body>
+</html>
