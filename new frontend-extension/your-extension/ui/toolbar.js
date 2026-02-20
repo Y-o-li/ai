@@ -98,17 +98,41 @@ class FloatingToolbar {
 
             // LLM响应消息
             if (event.data && event.data.type === 'YANZHI_YOULI_LLM_RESPONSE') {
-                console.log('[Toolbar] 收到LLM响应:', event.data);
+                (async () => {
+                    console.log('[Toolbar] 收到LLM响应:', event.data);
 
-                if (event.data.success) {
-                    // 显示结果卡片
-                    if (window.resultCard) {
-                        window.resultCard.show(event.data.result, event.data.action);
+                    if (event.data.success) {
+                        // 显示结果卡片
+                        if (window.resultCard) {
+                            window.resultCard.show(event.data.result, event.data.action);
+                        }
+
+                        // 自动保存到历史记录
+                        console.log('[Toolbar] 尝试保存到历史记录', {
+                            hasHistoryManager: !!window.historyManager,
+                            action: event.data.action,
+                            hasSelection: !!window.floatingToolbar?.currentSelection
+                        });
+
+                        if (window.historyManager) {
+                            try {
+                                const saved = await window.historyManager.add(
+                                    event.data.action,
+                                    window.floatingToolbar?.currentSelection || '',
+                                    event.data.result
+                                );
+                                console.log('[Toolbar] 保存结果:', saved ? '成功' : '失败', saved);
+                            } catch (error) {
+                                console.error('[Toolbar] 保存异常:', error);
+                            }
+                        } else {
+                            console.warn('[Toolbar] historyManager 不存在');
+                        }
+                    } else {
+                        console.error('[Toolbar] 处理失败:', event.data?.error);
+                        this.showError(event.data?.error || '处理失败，请检查API配置');
                     }
-                } else {
-                    console.error('[Toolbar] 处理失败:', event.data?.error);
-                    this.showError(event.data?.error || '处理失败，请检查API配置');
-                }
+                })();
             }
         });
     }
@@ -920,6 +944,11 @@ class FloatingToolbar {
         }
 
         console.log('[Toolbar] 发送处理请求:', action, this.currentSelection.substring(0, 50) + '...');
+        
+        // 【添加】显示加载状态
+        if (window.resultCard) {
+            window.resultCard.showLoading(action);
+        }
 
         // 通过 postMessage 发送请求（因为 chrome.runtime 在动态加载的脚本中不可用）
         window.postMessage({

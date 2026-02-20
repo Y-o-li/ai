@@ -113,8 +113,9 @@
         return false;
     });
 
-    // 监听来自toolbar的消息（转发给background）
+    // 监听来自toolbar和历史记录的消息（转发给background）
     window.addEventListener('message', (event) => {
+        // 处理LLM请求
         if (event.data && event.data.type === 'YANZHI_YOULI_LLM_REQUEST') {
             console.log('[Content Script] 收到LLM请求，转发给background');
 
@@ -135,8 +136,24 @@
                 }, '*');
             });
         }
+        
+        // 【新增】处理历史记录请求
+        if (event.data && event.data.type === 'YANZHI_YOULI_HISTORY_REQUEST') {
+            console.log('[Content Script] 收到历史记录请求:', event.data.action);
+            
+            chrome.runtime.sendMessage({ 
+                action: event.data.action, 
+                ...event.data.data 
+            }, (response) => {
+                window.postMessage({
+                    type: 'YANZHI_YOULI_HISTORY_RESPONSE',
+                    id: event.data.id,
+                    response: response
+                }, '*');
+            });
+        }
     });
-
+    
     // 清除高亮
     function clearHighlights() {
         const highlighted = document.querySelectorAll('.yz-highlighted, .inciting-text');
@@ -149,9 +166,22 @@
         });
     }
 
+
+
+    /**
+     * 加载词库（现在不需要了，因为highlight.js使用内联数据）
+     */
+    async function loadWordListForHighlight() {
+        console.log('📦 词库已内联在highlight.js中，无需加载');
+        return true;
+    }
+
     // 主初始化函数
     async function initialize() {
         try {
+            // 先加载词库并推送
+            await loadWordListForHighlight();  // ← 添加这一行
+
             // 加载样式
             await loadCSS('styles/extension.css');
 
@@ -163,6 +193,9 @@
 
             // 加载高亮模块
             await loadScript('content/highlight.js');
+
+            // 加载历史记录管理器
+            await loadScript('lib/history-manager.js');
 
             // 加载UI组件（此时全局配置已设置）
             await loadScript('ui/toolbar.js');
@@ -297,6 +330,10 @@
             }
         });
     }
+
+
+
+
 
     // 启动初始化
     initialize();
