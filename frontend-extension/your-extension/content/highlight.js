@@ -4,6 +4,59 @@
 // 描述: 加载本地词库，检测页面文本中的煽动性内容并高亮显示
 // =============================================================================
 
+// =============================================================================
+// 内联词库数据（解决CSP限制）
+// =============================================================================
+const INLINE_WORD_DATA = {
+  "version": "1.0.0",
+  "description": "本地煽动性词库 - 用于本地检测网页中的煽动性语言",
+  "categories": {
+    "basic_incitement": {
+      "name": "基础煽动性词汇",
+      "words": [
+        "打倒", "推翻", "消灭", "杀死", "暴力", "反抗", "抵制", "斗争", "冲突", "破坏",
+        "封杀", "妖魔化", "揭竿而起", "卖国贼", "汉奸", "走狗", "清算", "严惩"
+      ]
+    },
+    "terrorism": {
+      "name": "恐怖主义相关",
+      "words": [
+        "恐怖袭击", "爆炸", "袭击", "血洗", "屠杀", "极端", "恐怖组织", "炸弹", "纵火", "劫持",
+        "血债血偿", "暴徒"
+      ]
+    },
+    "political_incitement": {
+      "name": "政治煽动相关",
+      "words": [
+        "颠覆", "造反", "起义", "革命", "暗杀", "政变", "分裂", "独立", "政权", "统治",
+        "反华势力", "境外势力", "渗透"
+      ]
+    },
+    "social_incitement": {
+      "name": "社会煽动相关",
+      "words": [
+        "煽动", "蛊惑", "造谣", "传谣", "恐慌", "混乱", "暴乱", "骚乱", "聚众", "闹事",
+        "妖言惑众", "煽风点火"
+      ]
+    },
+    "discrimination": {
+      "name": "歧视仇恨相关",
+      "words": [
+        "种族歧视", "民族仇恨", "宗教冲突", "地域歧视", "性别歧视", "排外", "仇恨", "敌视", "蔑视", "侮辱"
+      ]
+    }
+  },
+  "patterns": {
+    "intensifiers": [
+      "必须", "一定", "绝对", "坚决", "彻底", "全面", "马上", "立即"
+    ],
+    "call_to_action": [
+      "行动起来", "一起", "大家", "所有人", "团结", "联合起来"
+    ]
+  }
+};
+
+
 class SensitiveWordDetector {
     constructor() {
         this.wordList = [];
@@ -14,48 +67,72 @@ class SensitiveWordDetector {
         
         // 配置
         this.config = {
-            minTextLength: 5,
+            minTextLength: 1,
             highlightOpacity: 0.3,
             highConfidenceThreshold: 0.8,
             mediumConfidenceThreshold: 0.5
         };
+
+        // 添加消息监听  
+        this.setupMessageListener();  
+    
+    // 监听自定义事件
+        window.addEventListener('yz-wordlist-ready', () => {
+            if (window._yz_wordlist_data && !this.isLoaded) {
+                console.log('📥 通过自定义事件获取词库数据');
+                this.processWordList(window._yz_wordlist_data);
+            }
+        });
     }
 
     /**
-     * 加载词库文件
-     * @returns {Promise<boolean>} 加载是否成功
+     * 设置消息监听
      */
+    setupMessageListener() {
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'YANZHI_YOULI_WORDLIST') {
+                console.log('📥 highlight.js 收到消息数据');
+                this.processWordList(event.data.data);
+            }
+        });
+    }
+
+    /**
+     * 处理词库数据
+     * @param {Object} data - 词库JSON数据
+     */
+    processWordList(data) {
+        // 提取所有词汇
+        this.wordList = [];
+        Object.values(data.categories).forEach(category => {
+            this.wordList.push(...category.words);
+        });
+        
+        // 构建词频映射
+        this.wordList.forEach((word, index) => {
+            this.wordMap.set(word, {
+                index,
+                category: this.getWordCategory(word, data.categories)
+            });
+        });
+        
+        this.isLoaded = true;
+        console.log('✅ 煽动性词库加载完成，共', this.wordList.length, '个词汇');
+        
+        // 触发一个自定义事件，让其他部分知道词库已加载
+        window.dispatchEvent(new CustomEvent('yz-wordlist-loaded'));
+    }
+
     async loadWordList() {
-        try {
-            // 尝试通过chrome.runtime获取URL，如果不可用则使用相对路径
-            const wordListUrl = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL
-                ? chrome.runtime.getURL('assets/sensitive_words.json')
-                : 'chrome-extension://pneaibckodfkdfcemjgdpfjbgigcmegk/assets/sensitive_words.json';
-            
-            const response = await fetch(wordListUrl);
-            const data = await response.json();
-            
-            // 提取所有词汇
-            this.wordList = [];
-            Object.values(data.categories).forEach(category => {
-                this.wordList.push(...category.words);
-            });
-            
-            // 构建词频映射（用于计算置信度）
-            this.wordList.forEach((word, index) => {
-                this.wordMap.set(word, {
-                    index,
-                    category: this.getWordCategory(word, data.categories)
-                });
-            });
-            
-            this.isLoaded = true;
-            console.log('✅ 煽动性词库加载完成，共', this.wordList.length, '个词汇');
+        // 如果已经加载，直接返回
+        if (this.isLoaded) {
             return true;
-        } catch (error) {
-            console.error('❌ 加载词库失败:', error);
-            return false;
         }
+        
+        // 直接使用内联数据
+        console.log('📥 使用内联词库数据');
+        this.processWordList(INLINE_WORD_DATA);
+        return true;
     }
 
     /**
@@ -94,6 +171,7 @@ class SensitiveWordDetector {
         // 遍历词库进行匹配
         for (const word of this.wordList) {
             if (text.includes(word)) {
+                console.log(`🔍 发现匹配: "${word}" 在文本中`);
                 const wordInfo = this.wordMap.get(word);
                 const positions = this.findAllPositions(text, word);
                 
@@ -401,14 +479,51 @@ if (typeof window !== 'undefined' && !window.detector) {
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🎯 Highlight.js 自动初始化');
-            await detector.loadWordList();
+            await window.detector.loadWordList();
             await scanAndHighlight();
         });
     } else {
         // DOM已经就绪
         console.log('🎯 Highlight.js 自动初始化（DOM已就绪）');
-        detector.loadWordList().then(() => {
+        window.detector.loadWordList().then(() => {
             scanAndHighlight();
         });
     }
+    // 调试函数：检查页面中是否包含特定词汇
+    function debugCheckWord(word) {
+        const bodyText = document.body.innerText;
+        if (bodyText.includes(word)) {
+            console.log(`✅ 页面包含词汇: "${word}"`);
+            return true;
+        } else {
+            console.log(`❌ 页面不包含词汇: "${word}"`);
+            return false;
+        }
+    }
+
+    // 调试函数：列出所有未匹配的词汇
+    function debugUnmatchedWords() {
+        const testWords = [
+            "封杀", "妖魔化", "揭竿而起", "卖国贼", "汉奸", "走狗", 
+            "血债血偿", "清算", "反华势力", "境外势力", "渗透", 
+            "妖言惑众", "煽风点火", "严惩"
+        ];
+        
+        console.log('=== 词汇匹配调试 ===');
+        testWords.forEach(word => {
+            const bodyText = document.body.innerText;
+            if (bodyText.includes(word)) {
+                console.log(`✅ 页面包含: "${word}"`);
+                // 检查是否在词库中
+                if (detector.wordList.includes(word)) {
+                    console.log(`   ✓ 词库中也包含: "${word}"`);
+                } else {
+                    console.log(`   ✗ 词库中不包含: "${word}" (!)`);
+                }
+            } else {
+                console.log(`❌ 页面不包含: "${word}"`);
+            }
+        });
+    }
+    
 }

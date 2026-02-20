@@ -34,6 +34,7 @@ class ResultCard {
         };
         
         this.init();
+        this.escHandler = this.handleEsc.bind(this);
     }
 
     /**
@@ -289,30 +290,60 @@ class ResultCard {
 
         // 更新头部样式
         const header = document.getElementById('yz-result-header');
-        header.style.background = config.gradient;
+        if (header) {
+            header.style.background = config.gradient;
+        }
 
         // 更新标题和图标
-        document.getElementById('yz-result-icon').textContent = config.icon;
-        document.getElementById('yz-result-title').textContent = config.title;
+        const iconEl = document.getElementById('yz-result-icon');
+        const titleEl = document.getElementById('yz-result-title');
+        if (iconEl) iconEl.textContent = config.icon;
+        if (titleEl) titleEl.textContent = config.title;
 
         // 更新内容
-        this.resultEl.innerHTML = this.formatResult(result, type);
-        this.loadingEl.style.display = 'none';
-        this.resultEl.style.display = 'block';
+        if (this.resultEl) {
+            this.resultEl.innerHTML = this.formatResult(result, type);
+        }
+        
+        // 隐藏加载，显示结果
+        if (this.loadingEl) this.loadingEl.style.display = 'none';
+        if (this.resultEl) this.resultEl.style.display = 'block';
 
         // 显示遮罩和卡片
-        this.overlay.style.display = 'block';
-        this.card.style.display = 'flex';
+        if (this.overlay) {
+            this.overlay.style.display = 'block';
+        }
+        if (this.card) {
+            this.card.style.display = 'flex';
+        }
 
+        // 触发动画
         requestAnimationFrame(() => {
-            this.overlay.style.opacity = '1';
-            this.card.style.opacity = '1';
-            this.card.style.transform = 'translate(-50%, -50%) scale(1)';
+            if (this.overlay) this.overlay.style.opacity = '1';
+            if (this.card) {
+                this.card.style.opacity = '1';
+                this.card.style.transform = 'translate(-50%, -50%) scale(1)';
+            }
         });
 
-        this.isVisible = true;
-    }
 
+        // 添加 Esc 监听
+        document.addEventListener('keydown', this.escHandler);
+
+        this.isVisible = true;
+        console.log('卡片显示成功', type);
+
+        
+    }
+    /**
+     * 处理 Esc 键关闭卡片
+     * @param {KeyboardEvent} e 
+     */
+    handleEsc(e) {
+        if (e.key === 'Escape' && this.isVisible) {
+            this.hide();
+        }
+    }
     /**
      * 显示加载状态
      * @param {string} type - 处理类型
@@ -352,6 +383,9 @@ class ResultCard {
     hide() {
         if (!this.isVisible) return;
 
+        // 移除 Esc 监听
+        document.removeEventListener('keydown', this.escHandler);
+        
         this.card.style.opacity = '0';
         this.card.style.transform = 'translate(-50%, -50%) scale(0.9)';
         this.overlay.style.opacity = '0';

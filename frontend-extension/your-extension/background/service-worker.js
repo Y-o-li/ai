@@ -330,6 +330,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  // 获取历史记录
+  if (request.action === 'historyGetAll') {
+    handleHistoryGetAll().then(sendResponse);
+    return true;
+  }
+
+  // 添加历史记录
+  if (request.action === 'historyAdd') {
+    handleHistoryAdd(request).then(sendResponse);
+    return true;
+  }
+
+  // 删除历史记录
+  if (request.action === 'historyDelete') {
+    handleHistoryDelete(request).then(sendResponse);
+    return true;
+  }
+
+  // 清空历史记录
+  if (request.action === 'historyClear') {
+    handleHistoryClear().then(sendResponse);
+    return true;
+  }
+
+  // 切换收藏
+  if (request.action === 'historyToggleFavorite') {
+    handleHistoryToggleFavorite(request).then(sendResponse);
+    return true;
+  }
+
   // 测试API连接
   if (request.action === 'testConnection') {
     const testProcessor = createLLMProcessor();
@@ -388,6 +418,119 @@ chrome.runtime.onInstalled.addListener((details) => {
   
   initialize();
 });
+
+/**
+ * 处理获取历史记录
+ */
+async function handleHistoryGetAll() {
+  try {
+    const result = await chrome.storage.local.get('yz_history');
+    return { success: true, records: result.yz_history || [] };
+  } catch (error) {
+    console.error('获取历史记录失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 处理添加历史记录
+ * @param {Object} request - 请求对象
+ */
+async function handleHistoryAdd(request) {
+  try {
+    const result = await chrome.storage.local.get('yz_history');
+    const records = result.yz_history || [];
+    
+    const newRecord = {
+      id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+      timestamp: Date.now(),
+      date: new Date().toISOString().split('T')[0],
+      type: request.type,
+      typeName: getTypeName(request.type),
+      originalText: request.originalText.substring(0, 200),
+      originalTextFull: request.originalText,
+      result: request.result,
+      length: request.originalText.length,
+      isFavorite: false
+    };
+
+    records.unshift(newRecord);
+    
+    // 限制500条
+    if (records.length > 500) {
+      records.pop();
+    }
+
+    await chrome.storage.local.set({ yz_history: records });
+    return { success: true, record: newRecord };
+  } catch (error) {
+    console.error('添加历史记录失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 处理删除历史记录
+ * @param {Object} request - 请求对象
+ */
+async function handleHistoryDelete(request) {
+  try {
+    const result = await chrome.storage.local.get('yz_history');
+    const records = result.yz_history || [];
+    const newRecords = records.filter(r => r.id !== request.id);
+    await chrome.storage.local.set({ yz_history: newRecords });
+    return { success: true };
+  } catch (error) {
+    console.error('删除历史记录失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 处理清空历史记录
+ */
+async function handleHistoryClear() {
+  try {
+    await chrome.storage.local.remove('yz_history');
+    return { success: true };
+  } catch (error) {
+    console.error('清空历史记录失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 处理切换收藏
+ * @param {Object} request - 请求对象
+ */
+async function handleHistoryToggleFavorite(request) {
+  try {
+    const result = await chrome.storage.local.get('yz_history');
+    const records = result.yz_history || [];
+    const record = records.find(r => r.id === request.id);
+    if (record) {
+      record.isFavorite = !record.isFavorite;
+      await chrome.storage.local.set({ yz_history: records });
+      return { success: true };
+    }
+    return { success: false, error: '记录不存在' };
+  } catch (error) {
+    console.error('切换收藏失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 获取类型中文名
+ */
+function getTypeName(type) {
+  const map = {
+    factCheck: '事实核查',
+    summarize: '语义总结',
+    neutralize: '中性化改写'
+  };
+  return map[type] || type;
+}
 
 // 启动初始化
 initialize();

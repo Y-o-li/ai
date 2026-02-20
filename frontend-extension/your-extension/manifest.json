@@ -63,7 +63,11 @@
         "ui/toolbar.js",
         "ui/result-card.js",
         "content/selection-handler.js",
-        "content/content-script.js"
+        "lib/history-manager.js",
+        "content/content-script.js",
+        "history/history.html",
+        "history/history.css",
+        "history/history.js"
       ],
       "matches": ["<all_urls>"]
     }

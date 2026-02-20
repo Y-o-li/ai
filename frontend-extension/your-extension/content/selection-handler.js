@@ -148,7 +148,10 @@
 
         // 键盘事件
         document.addEventListener('keydown', handleKeyDown);
-
+        
+        // 【添加】快捷键监听
+        document.addEventListener('keydown', handleKeyShortcuts);
+        
         // 选择变化事件（用于键盘选择）
         document.addEventListener('selectionchange', () => {
             clearTimeout(hideTimeout);
@@ -158,6 +161,77 @@
         // 滚动和窗口大小变化时隐藏
         window.addEventListener('scroll', () => hideToolbar(), { passive: true });
         window.addEventListener('resize', () => hideToolbar(), { passive: true });
+    }
+
+    /**
+     * 处理键盘快捷键
+     * @param {KeyboardEvent} e - 键盘事件
+     */
+    function handleKeyShortcuts(e) {
+        // Ctrl+Shift+F - 事实核查
+        if (e.ctrlKey && e.shiftKey && e.key === 'F') {
+            e.preventDefault();
+            console.log('快捷键: Ctrl+Shift+F 事实核查');
+            triggerLLMAction('factCheck');
+        }
+        
+        // Ctrl+Shift+S - 语义总结
+        if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+            e.preventDefault();
+            console.log('快捷键: Ctrl+Shift+S 语义总结');
+            triggerLLMAction('summarize');
+        }
+        
+        // Ctrl+Shift+N - 中性化改写
+        if (e.ctrlKey && e.shiftKey && e.altKey && e.key === 'N') {
+            e.preventDefault();
+            console.log('快捷键: Ctrl+Shift+N 中性化改写');
+            triggerLLMAction('neutralize');
+        }
+        
+        // Esc - 关闭工具栏/卡片
+        if (e.key === 'Escape') {
+            // 关闭结果卡片
+            if (window.resultCard && window.resultCard.isVisible) {
+                window.resultCard.hide();
+            }
+            // 关闭工具栏（如果不是常驻模式）
+            if (window.floatingToolbar && window.floatingToolbar.isVisible && !window.floatingToolbar.alwaysShow) {
+                window.floatingToolbar.hide();
+            }
+        }
+    }
+
+    /**
+     * 触发LLM动作
+     * @param {string} action - 动作类型
+     */
+    function triggerLLMAction(action) {
+        // 获取当前选中的文本
+        const selectedText = window.getSelection().toString().trim();
+        
+        if (!selectedText || selectedText.length < 6) {
+            console.warn('请先选择要处理的文本（至少6个字符）');
+            // 可以显示一个提示
+            return;
+        }
+
+        // 如果有工具栏，设置当前选中的文本
+        if (window.floatingToolbar) {
+            window.floatingToolbar.currentSelection = selectedText;
+            
+            // 显示加载状态
+            if (window.resultCard) {
+                window.resultCard.showLoading(action);
+            }
+            
+            // 发送请求
+            window.postMessage({
+                type: 'YANZHI_YOULI_LLM_REQUEST',
+                action: action,
+                text: selectedText
+            }, '*');
+        }
     }
 
     /**

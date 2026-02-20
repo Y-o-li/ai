@@ -117,7 +117,7 @@
     border-radius: 16px !important;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
     z-index: 2147483646 !important;
-    display: none !important;
+    
     flex-direction: column !important;
     overflow: hidden !important;
 }
@@ -131,7 +131,7 @@
     background: rgba(0, 0, 0, 0.5) !important;
     backdrop-filter: blur(4px) !important;
     z-index: 2147483645 !important;
-    display: none !important;
+    
 }
 
 /* 暗色模式适配 */

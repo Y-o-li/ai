@@ -38,7 +38,10 @@ function bindEvents() {
   
   // 设置按钮
   document.getElementById('settingsBtn').addEventListener('click', openSettings);
-  
+
+  // 历史记录按钮
+  document.getElementById('historyBtn').addEventListener('click', openHistory);
+
   // 帮助链接
   document.getElementById('helpLink').addEventListener('click', (e) => {
     e.preventDefault();
@@ -79,6 +82,16 @@ function updateUI() {
   
   // 更新统计（从storage读取）
   updateStats();
+}
+
+/**
+ * 打开历史记录页面
+ */
+function openHistory() {
+  chrome.tabs.create({
+    url: chrome.runtime.getURL('history/history.html')
+  });
+  window.close();
 }
 
 /**
