@@ -89,17 +89,11 @@ class HistoryManager {
   }
 
   /**
-   * 导出历史记录为JSON
+   * 导出历史记录为PDF
    */
-  async exportToJSON() {
+  async exportToPDF() {
     const records = await this.getAll();
-    const exportData = {
-      version: '1.0',
-      exportTime: new Date().toISOString(),
-      count: records.length,
-      records: records
-    };
-    return JSON.stringify(exportData, null, 2);
+    return records;
   }
 
   /**

@@ -5,6 +5,8 @@
 let currentFilter = 'all';
 let currentSearch = '';
 let allRecords = [];
+let selectMode = false;
+let selectedRecords = new Set();
 
 /**
  * 初始化页面
@@ -126,6 +128,8 @@ function formatDate(dateStr) {
 function renderRecordItem(record) {
     const typeClass = record.type;
     const favoriteClass = record.isFavorite ? 'active' : '';
+    const favoriteIcon = record.isFavorite ? '⭐' : '☆';
+    const favoriteTitle = record.isFavorite ? '取消收藏' : '收藏';
     const originalPreview = record.originalText.length > 100 
         ? record.originalText.substring(0, 100) + '...' 
         : record.originalText;
@@ -133,21 +137,31 @@ function renderRecordItem(record) {
         ? record.result.substring(0, 150) + '...' 
         : record.result;
     
+    const isSelected = selectedRecords.has(record.id);
+    const selectedClass = isSelected ? 'selected' : '';
+    const checkboxDisplay = selectMode ? 'flex' : 'none';
+    const checkboxChecked = isSelected ? 'checked' : '';
+    
     return `
-        <div class="history-item" data-id="${record.id}">
-            <div class="history-item-header">
-                <span class="history-type ${typeClass}">${record.typeName}</span>
-                <span class="history-date">${new Date(record.timestamp).toLocaleTimeString()}</span>
+        <div class="history-item ${selectedClass}" data-id="${record.id}">
+            <div class="history-checkbox" style="display: ${checkboxDisplay};">
+                <input type="checkbox" ${checkboxChecked} data-record-id="${record.id}">
             </div>
-            <div class="history-original" title="${record.originalText}">${originalPreview}</div>
-            <div class="history-result-preview">${resultPreview}</div>
-            <div class="history-footer">
-                <span class="history-length">${record.length} 字符</span>
-                <div class="history-actions">
-                    <button class="favorite ${favoriteClass}" title="收藏">⭐</button>
-                    <button class="view" title="查看详情">👁️</button>
-                    <button class="reuse" title="重新分析">🔄</button>
-                    <button class="delete" title="删除">🗑️</button>
+            <div class="history-item-content">
+                <div class="history-item-header">
+                    <span class="history-type ${typeClass}">${record.typeName}</span>
+                    <span class="history-date">${new Date(record.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div class="history-original" title="${record.originalText}">${originalPreview}</div>
+                <div class="history-result-preview">${resultPreview}</div>
+                <div class="history-footer">
+                    <span class="history-length">${record.length} 字符</span>
+                    <div class="history-actions">
+                        <button class="favorite ${favoriteClass}" title="${favoriteTitle}">${favoriteIcon}</button>
+                        <button class="view" title="查看详情">👁️</button>
+                        <button class="reuse" title="重新分析">🔄</button>
+                        <button class="delete" title="删除">🗑️</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -158,6 +172,14 @@ function renderRecordItem(record) {
  * 绑定记录卡片内的事件
  */
 function bindRecordEvents() {
+    // 绑定复选框事件
+    document.querySelectorAll('.history-checkbox input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const id = e.target.dataset.recordId;
+            toggleRecordSelection(id);
+        });
+    });
+    
     document.querySelectorAll('.favorite').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -262,8 +284,14 @@ function bindEvents() {
         }
     });
     
-    // 导出
-    document.getElementById('exportBtn').addEventListener('click', exportHistory);
+    // 选择模式切换
+    document.getElementById('selectModeBtn').addEventListener('click', toggleSelectMode);
+    
+    // 导出全部
+    document.getElementById('exportBtn').addEventListener('click', () => exportHistory(false));
+    
+    // 导出选中
+    document.getElementById('exportSelectedBtn').addEventListener('click', () => exportHistory(true));
     
     // 清空
     document.getElementById('clearBtn').addEventListener('click', clearHistory);
@@ -285,17 +313,206 @@ function bindEvents() {
 }
 
 /**
- * 导出历史记录
+ * 导出历史记录为PDF
  */
-async function exportHistory() {
-    const json = await window.historyManager.exportToJSON();
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `history-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+async function exportHistory(selectedOnly = false) {
+    try {
+        let records;
+        
+        if (selectedOnly) {
+            // 导出选中的记录
+            if (selectedRecords.size === 0) {
+                alert('请先选择要导出的记录');
+                return;
+            }
+            records = allRecords.filter(r => selectedRecords.has(r.id));
+        } else {
+            // 导出全部记录
+            records = await window.historyManager.exportToPDF();
+        }
+        
+        if (records.length === 0) {
+            alert('暂无历史记录可导出');
+            return;
+        }
+        
+        // 创建一个隐藏的打印页面
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>言之有理 - 历史记录</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", "SimSun", sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .export-info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .record {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        .record-type {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 16px;
+        }
+        .record-time {
+            color: #999;
+            font-size: 14px;
+        }
+        .section-title {
+            font-weight: bold;
+            color: #333;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        .section-content {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        @media print {
+            body {
+                padding: 10px;
+            }
+            .record {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>📚 言之有理 - 历史记录</h1>
+    <div class="export-info">
+        <div>导出时间: ${new Date().toLocaleString('zh-CN')}</div>
+        <div>记录总数: ${records.length}${selectedOnly ? ' (选中记录)' : ''}</div>
+    </div>
+`);
+
+        records.forEach((record, index) => {
+            const timeText = new Date(record.timestamp).toLocaleString('zh-CN');
+            printWindow.document.write(`
+    <div class="record">
+        <div class="record-header">
+            <span class="record-type">${index + 1}. ${record.typeName || '未知类型'}</span>
+            <span class="record-time">${timeText}</span>
+        </div>
+        <div class="section-title">原文:</div>
+        <div class="section-content">${escapeHtml(record.originalText || record.originalTextFull || '')}</div>
+        <div class="section-title">结果:</div>
+        <div class="section-content">${escapeHtml(record.result || '')}</div>
+    </div>
+`);
+        });
+
+        printWindow.document.write(`
+</body>
+</html>
+`);
+        printWindow.document.close();
+        
+        // 等待内容加载完成后打印
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+        
+    } catch (error) {
+        console.error('导出PDF失败:', error);
+        alert('导出失败: ' + error.message);
+    }
+}
+
+/**
+ * 转义HTML特殊字符
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * 切换选择模式
+ */
+function toggleSelectMode() {
+    selectMode = !selectMode;
+    const btn = document.getElementById('selectModeBtn');
+    const exportSelectedBtn = document.getElementById('exportSelectedBtn');
+    const selectedCountEl = document.getElementById('selectedCount');
+    
+    if (selectMode) {
+        btn.textContent = '✓ 退出选择';
+        btn.classList.add('btn-primary');
+        btn.classList.remove('btn-secondary');
+        exportSelectedBtn.style.display = 'inline-block';
+        selectedCountEl.style.display = 'inline';
+    } else {
+        btn.textContent = '☑️ 选择模式';
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-secondary');
+        exportSelectedBtn.style.display = 'none';
+        selectedCountEl.style.display = 'none';
+        selectedRecords.clear();
+    }
+    
+    renderRecords();
+    updateSelectedCount();
+}
+
+/**
+ * 切换记录选中状态
+ */
+function toggleRecordSelection(id) {
+    if (selectedRecords.has(id)) {
+        selectedRecords.delete(id);
+    } else {
+        selectedRecords.add(id);
+    }
+    
+    // 更新UI
+    const item = document.querySelector(`.history-item[data-id="${id}"]`);
+    if (item) {
+        if (selectedRecords.has(id)) {
+            item.classList.add('selected');
+        } else {
+            item.classList.remove('selected');
+        }
+    }
+    
+    updateSelectedCount();
+}
+
+/**
+ * 更新选中计数
+ */
+function updateSelectedCount() {
+    document.getElementById('selectedCountNum').textContent = selectedRecords.size;
 }
 
 /**

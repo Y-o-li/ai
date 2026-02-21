@@ -115,6 +115,11 @@
 
     // 监听来自toolbar和历史记录的消息（转发给background）
     window.addEventListener('message', (event) => {
+        // 只处理来自同一窗口的消息
+        if (event.source !== window) return;
+        
+        console.log('[Content Script] 收到 postMessage:', event.data?.type);
+        
         // 处理LLM请求
         if (event.data && event.data.type === 'YANZHI_YOULI_LLM_REQUEST') {
             console.log('[Content Script] 收到LLM请求，转发给background');
@@ -137,7 +142,20 @@
             });
         }
         
-        // 【新增】处理历史记录请求
+        // 处理打开历史记录请求
+        if (event.data && event.data.type === 'YANZHI_YOULI_OPEN_HISTORY') {
+            console.log('[Content Script] 收到打开历史记录请求');
+            try {
+                const historyUrl = chrome.runtime.getURL('history/history.html');
+                console.log('[Content Script] 历史记录URL:', historyUrl);
+                window.open(historyUrl, '_blank');
+                console.log('[Content Script] 已调用 window.open');
+            } catch (error) {
+                console.error('[Content Script] 打开历史记录失败:', error);
+            }
+        }
+        
+        // 处理历史记录请求
         if (event.data && event.data.type === 'YANZHI_YOULI_HISTORY_REQUEST') {
             console.log('[Content Script] 收到历史记录请求:', event.data.action);
             

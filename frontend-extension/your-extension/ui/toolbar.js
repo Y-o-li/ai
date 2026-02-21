@@ -44,6 +44,13 @@ class FloatingToolbar {
                 label: '中性化改写',
                 action: 'neutralize',
                 color: '#FF9800'
+            },
+            {
+                id: 'yz-history',
+                icon: '📚',
+                label: '历史记录',
+                action: 'openHistory',
+                color: '#9C27B0'
             }
         ];
         
@@ -913,6 +920,12 @@ class FloatingToolbar {
      * @param {string} action - 动作类型
      */
     handleAction(action) {
+        // 如果是打开历史记录，直接打开新标签页
+        if (action === 'openHistory') {
+            this.openHistoryPage();
+            return;
+        }
+
         // 常驻模式下，如果没有选中文字，提示用户先选择文本
         if (!this.currentSelection) {
             this.showError('请先选择要处理的文本');
@@ -935,6 +948,33 @@ class FloatingToolbar {
 
         // 执行后清空当前选择文本，但不隐藏工具栏（因为工具栏显示开关开启时，工具栏始终显示）
         this.currentSelection = '';
+    }
+
+    /**
+     * 打开历史记录页面
+     */
+    openHistoryPage() {
+        console.log('[Toolbar] 准备打开历史记录页面');
+        
+        // 方法1: 尝试直接使用 chrome.runtime (如果可用)
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+            try {
+                const historyUrl = chrome.runtime.getURL('history/history.html');
+                console.log('[Toolbar] 使用 chrome.runtime.getURL:', historyUrl);
+                window.open(historyUrl, '_blank');
+                console.log('[Toolbar] 已直接打开历史记录页面');
+                return;
+            } catch (error) {
+                console.warn('[Toolbar] chrome.runtime 方法失败:', error);
+            }
+        }
+        
+        // 方法2: 通过 postMessage 请求 content-script 打开历史记录页面
+        console.log('[Toolbar] 使用 postMessage 方法');
+        window.postMessage({
+            type: 'YANZHI_YOULI_OPEN_HISTORY'
+        }, '*');
+        console.log('[Toolbar] 已发送 YANZHI_YOULI_OPEN_HISTORY 消息');
     }
 
     /**

@@ -59,6 +59,7 @@
         "assets/sensitive_words.json",
         "styles/extension.css",
         "lib/utils.js",
+        "lib/jspdf.umd.min.js",
         "content/highlight.js",
         "ui/toolbar.js",
         "ui/result-card.js",

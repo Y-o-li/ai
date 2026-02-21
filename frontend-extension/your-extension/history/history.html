@@ -12,7 +12,9 @@
         <header class="history-header">
             <h1>📚 历史记录</h1>
             <div class="header-actions">
-                <button id="exportBtn" class="btn btn-secondary">📤 导出</button>
+                <button id="selectModeBtn" class="btn btn-secondary">☑️ 选择模式</button>
+                <button id="exportBtn" class="btn btn-secondary">📤 导出全部</button>
+                <button id="exportSelectedBtn" class="btn btn-secondary" style="display: none;">📤 导出选中</button>
                 <button id="clearBtn" class="btn btn-danger">🗑️ 清空</button>
             </div>
         </header>
@@ -35,6 +37,9 @@
         <!-- 统计信息 -->
         <div class="stats-info">
             <span>总计 <span id="totalCount">0</span> 条记录</span>
+            <span id="selectedCount" style="display: none; margin-left: 20px; color: #667eea; font-weight: 600;">
+                已选中 <span id="selectedCountNum">0</span> 条
+            </span>
         </div>
 
         <!-- 历史记录列表 -->

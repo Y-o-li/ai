@@ -193,11 +193,39 @@ body {
     margin-bottom: 16px;
     padding: 20px;
     transition: all 0.2s ease;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
 }
 
 .history-item:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     border-color: #667eea;
+}
+
+.history-item.selected {
+    border-color: #667eea;
+    background: #f0f4ff;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.history-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 4px;
+}
+
+.history-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.history-item-content {
+    flex: 1;
+    min-width: 0;
 }
 
 .history-item-header {
@@ -252,10 +280,33 @@ body {
 
 .history-actions button:hover {
     background: #f0f0f0;
+    transform: scale(1.1);
+}
+
+.history-actions .favorite {
+    color: #d1d5db;
+    transition: all 0.3s ease;
+}
+
+.history-actions .favorite:hover {
+    color: #fbbf24;
 }
 
 .history-actions .favorite.active {
     color: #fbbf24;
+    animation: starPulse 0.5s ease;
+}
+
+@keyframes starPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.3);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .history-original {

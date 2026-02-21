@@ -11,6 +11,23 @@ class ResultCard {
         this.currentResult = null;
         this.currentType = null;
         
+        // 拖动相关状态
+        this.isDragging = false;
+        this.hasDragged = false;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
+        
+        // 缩放相关状态
+        this.isResizing = false;
+        this.resizeStartX = 0;
+        this.resizeStartY = 0;
+        this.startWidth = 0;
+        this.startHeight = 0;
+        this.minWidth = 400;
+        this.minHeight = 300;
+        
         // 类型配置
         this.typeConfig = {
             factCheck: {
@@ -35,6 +52,12 @@ class ResultCard {
         
         this.init();
         this.escHandler = this.handleEsc.bind(this);
+        this.startDrag = this.startDrag.bind(this);
+        this.onDrag = this.onDrag.bind(this);
+        this.endDrag = this.endDrag.bind(this);
+        this.startResize = this.startResize.bind(this);
+        this.onResize = this.onResize.bind(this);
+        this.endResize = this.endResize.bind(this);
     }
 
     /**
@@ -53,14 +76,11 @@ class ResultCard {
         this.card.id = 'yz-result-card';
         this.card.className = 'yz-result-card';
         
+        const defaultWidth = 480;
+        const defaultHeight = 600;
+        
         Object.assign(this.card.style, {
             position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%) scale(0.9)',
-            width: '480px',
-            maxWidth: '90vw',
-            maxHeight: '80vh',
             background: '#fff',
             borderRadius: '16px',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.05)',
@@ -69,8 +89,13 @@ class ResultCard {
             flexDirection: 'column',
             overflow: 'hidden',
             opacity: '0',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            transition: 'opacity 0.3s ease',
+            userSelect: 'none'
         });
+
+        // 使用 setProperty 设置宽高，以覆盖 CSS 中的 !important
+        this.card.style.setProperty('width', `${defaultWidth}px`, 'important');
+        this.card.style.setProperty('height', `${defaultHeight}px`, 'important');
 
         // 创建头部
         const header = this.createHeader();
@@ -84,26 +109,10 @@ class ResultCard {
         const footer = this.createFooter();
         this.card.appendChild(footer);
 
-        // 添加遮罩层
-        this.overlay = document.createElement('div');
-        this.overlay.id = 'yz-result-overlay';
-        Object.assign(this.overlay.style, {
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            background: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(4px)',
-            zIndex: '2147483645',
-            display: 'none',
-            opacity: '0',
-            transition: 'opacity 0.3s ease'
-        });
+        // 创建缩放手柄
+        const resizeHandle = this.createResizeHandle();
+        this.card.appendChild(resizeHandle);
 
-        this.overlay.addEventListener('click', () => this.hide());
-
-        document.body.appendChild(this.overlay);
         document.body.appendChild(this.card);
     }
 
@@ -122,26 +131,44 @@ class ResultCard {
             padding: '16px 20px',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: '#fff',
-            borderRadius: '16px 16px 0 0'
+            borderRadius: '16px 16px 0 0',
+            cursor: 'move',
+            userSelect: 'none'
         });
 
-        // 左侧标题
-        const titleArea = document.createElement('div');
-        titleArea.style.display = 'flex';
-        titleArea.style.alignItems = 'center';
-        titleArea.style.gap = '10px';
+        // 使用箭头函数保持 this 上下文
+        header.addEventListener('mousedown', (e) => this.startDrag(e));
+
+        // 左侧：拖动手柄 + 标题
+        const leftArea = document.createElement('div');
+        leftArea.style.display = 'flex';
+        leftArea.style.alignItems = 'center';
+        leftArea.style.gap = '10px';
+        leftArea.style.pointerEvents = 'none';
+
+        // 拖动手柄
+        const dragHandle = document.createElement('div');
+        dragHandle.innerHTML = '⋮⋮';
+        Object.assign(dragHandle.style, {
+            fontSize: '14px',
+            lineHeight: '1',
+            letterSpacing: '-2px',
+            color: 'rgba(255, 255, 255, 0.7)',
+            cursor: 'move'
+        });
+        leftArea.appendChild(dragHandle);
 
         const icon = document.createElement('span');
         icon.id = 'yz-result-icon';
         icon.style.fontSize = '20px';
-        titleArea.appendChild(icon);
+        leftArea.appendChild(icon);
 
         const title = document.createElement('h3');
         title.id = 'yz-result-title';
         title.style.cssText = 'margin: 0; font-size: 16px; font-weight: 600;';
-        titleArea.appendChild(title);
+        leftArea.appendChild(title);
 
-        header.appendChild(titleArea);
+        header.appendChild(leftArea);
 
         // 关闭按钮
         const closeBtn = document.createElement('button');
@@ -158,7 +185,8 @@ class ResultCard {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            pointerEvents: 'auto'
         });
 
         closeBtn.addEventListener('mouseenter', () => {
@@ -167,7 +195,10 @@ class ResultCard {
         closeBtn.addEventListener('mouseleave', () => {
             closeBtn.style.background = 'rgba(255, 255, 255, 0.2)';
         });
-        closeBtn.addEventListener('click', () => this.hide());
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.hide();
+        });
 
         header.appendChild(closeBtn);
 
@@ -185,7 +216,7 @@ class ResultCard {
         Object.assign(content.style, {
             padding: '20px',
             overflowY: 'auto',
-            maxHeight: 'calc(80vh - 140px)',
+            flex: '1',
             lineHeight: '1.7',
             fontSize: '14px',
             color: '#333'
@@ -207,16 +238,6 @@ class ResultCard {
                 <span style="color: #666;">正在处理中...</span>
             </div>
         `;
-        
-        // 添加旋转动画
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes yz-spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        `;
-        document.head.appendChild(style);
         
         this.loadingEl.style.display = 'none';
         content.appendChild(this.loadingEl);
@@ -277,6 +298,171 @@ class ResultCard {
     }
 
     /**
+     * 创建缩放手柄
+     * @returns {HTMLElement} 缩放手柄元素
+     */
+    createResizeHandle() {
+        const handle = document.createElement('div');
+        handle.className = 'yz-resize-handle';
+        
+        Object.assign(handle.style, {
+            position: 'absolute',
+            right: '0',
+            bottom: '0',
+            width: '20px',
+            height: '20px',
+            cursor: 'nwse-resize',
+            background: 'linear-gradient(135deg, transparent 50%, rgba(102, 126, 234, 0.5) 50%)',
+            borderRadius: '0 0 16px 0',
+            zIndex: '10'
+        });
+
+        // 使用箭头函数或者 bind 来保持 this 上下文
+        handle.addEventListener('mousedown', (e) => this.startResize(e));
+
+        return handle;
+    }
+
+    /**
+     * 开始拖动
+     */
+    startDrag(e) {
+        if (e.target.closest('button')) return;
+
+        this.isDragging = true;
+        this.hasDragged = false;
+
+        const rect = this.card.getBoundingClientRect();
+        this.dragStartX = e.clientX;
+        this.dragStartY = e.clientY;
+        this.dragOffsetX = e.clientX - rect.left;
+        this.dragOffsetY = e.clientY - rect.top;
+
+        this.card.style.transition = 'none';
+        document.body.style.cursor = 'move';
+        document.body.style.userSelect = 'none';
+
+        document.addEventListener('mousemove', this.onDrag);
+        document.addEventListener('mouseup', this.endDrag);
+
+        e.preventDefault();
+    }
+
+    /**
+     * 拖动中
+     */
+    onDrag(e) {
+        if (!this.isDragging) return;
+
+        const deltaX = Math.abs(e.clientX - this.dragStartX);
+        const deltaY = Math.abs(e.clientY - this.dragStartY);
+        if (deltaX > 3 || deltaY > 3) {
+            this.hasDragged = true;
+        }
+
+        let left = e.clientX - this.dragOffsetX;
+        let top = e.clientY - this.dragOffsetY;
+
+        const cardWidth = this.card.offsetWidth;
+        const cardHeight = this.card.offsetHeight;
+        const maxLeft = window.innerWidth - cardWidth;
+        const maxTop = window.innerHeight - cardHeight;
+
+        left = Math.max(0, Math.min(left, maxLeft));
+        top = Math.max(0, Math.min(top, maxTop));
+
+        this.card.style.setProperty('left', `${left}px`, 'important');
+        this.card.style.setProperty('top', `${top}px`, 'important');
+
+        e.preventDefault();
+    }
+
+    /**
+     * 结束拖动
+     */
+    endDrag(e) {
+        if (!this.isDragging) return;
+
+        this.isDragging = false;
+
+        this.card.style.transition = 'opacity 0.3s ease';
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+
+        document.removeEventListener('mousemove', this.onDrag);
+        document.removeEventListener('mouseup', this.endDrag);
+
+        setTimeout(() => {
+            this.hasDragged = false;
+        }, 100);
+
+        e.preventDefault();
+    }
+
+    /**
+     * 开始缩放
+     */
+    startResize(e) {
+        console.log('[ResultCard] 开始缩放');
+        this.isResizing = true;
+        this.resizeStartX = e.clientX;
+        this.resizeStartY = e.clientY;
+        this.startWidth = this.card.offsetWidth;
+        this.startHeight = this.card.offsetHeight;
+
+        this.card.style.transition = 'none';
+        document.body.style.cursor = 'nwse-resize';
+        document.body.style.userSelect = 'none';
+
+        document.addEventListener('mousemove', this.onResize);
+        document.addEventListener('mouseup', this.endResize);
+
+        e.stopPropagation();
+        e.preventDefault();
+    }
+
+    /**
+     * 缩放中
+     */
+    onResize(e) {
+        if (!this.isResizing) return;
+
+        const deltaX = e.clientX - this.resizeStartX;
+        const deltaY = e.clientY - this.resizeStartY;
+
+        let newWidth = this.startWidth + deltaX;
+        let newHeight = this.startHeight + deltaY;
+
+        newWidth = Math.max(this.minWidth, Math.min(newWidth, window.innerWidth - 40));
+        newHeight = Math.max(this.minHeight, Math.min(newHeight, window.innerHeight - 40));
+
+        console.log('[ResultCard] 缩放中:', newWidth, newHeight);
+        this.card.style.setProperty('width', `${newWidth}px`, 'important');
+        this.card.style.setProperty('height', `${newHeight}px`, 'important');
+
+        e.preventDefault();
+    }
+
+    /**
+     * 结束缩放
+     */
+    endResize(e) {
+        if (!this.isResizing) return;
+
+        console.log('[ResultCard] 结束缩放');
+        this.isResizing = false;
+
+        this.card.style.transition = 'opacity 0.3s ease';
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+
+        document.removeEventListener('mousemove', this.onResize);
+        document.removeEventListener('mouseup', this.endResize);
+
+        e.preventDefault();
+    }
+
+    /**
      * 显示结果卡片
      * @param {string} result - 处理结果
      * @param {string} type - 处理类型
@@ -309,41 +495,41 @@ class ResultCard {
         if (this.loadingEl) this.loadingEl.style.display = 'none';
         if (this.resultEl) this.resultEl.style.display = 'block';
 
-        // 显示遮罩和卡片
-        if (this.overlay) {
-            this.overlay.style.display = 'block';
-        }
-        if (this.card) {
-            this.card.style.display = 'flex';
-        }
+        // 每次打开都重置为默认大小
+        const defaultWidth = 480;
+        const defaultHeight = 600;
+        this.card.style.setProperty('width', `${defaultWidth}px`, 'important');
+        this.card.style.setProperty('height', `${defaultHeight}px`, 'important');
+
+        // 每次打开都重置为默认位置：完全居中
+        const left = Math.max(20, (window.innerWidth - defaultWidth) / 2);
+        const top = Math.max(20, (window.innerHeight - defaultHeight) / 2);
+        this.card.style.setProperty('left', `${left}px`, 'important');
+        this.card.style.setProperty('top', `${top}px`, 'important');
+
+        // 显示卡片
+        this.card.style.display = 'flex';
 
         // 触发动画
         requestAnimationFrame(() => {
-            if (this.overlay) this.overlay.style.opacity = '1';
-            if (this.card) {
-                this.card.style.opacity = '1';
-                this.card.style.transform = 'translate(-50%, -50%) scale(1)';
-            }
+            this.card.style.opacity = '1';
         });
-
 
         // 添加 Esc 监听
         document.addEventListener('keydown', this.escHandler);
 
         this.isVisible = true;
-        console.log('卡片显示成功', type);
-
-        
     }
+
     /**
      * 处理 Esc 键关闭卡片
-     * @param {KeyboardEvent} e 
      */
     handleEsc(e) {
         if (e.key === 'Escape' && this.isVisible) {
             this.hide();
         }
     }
+
     /**
      * 显示加载状态
      * @param {string} type - 处理类型
@@ -356,22 +542,35 @@ class ResultCard {
 
         // 更新头部
         const header = document.getElementById('yz-result-header');
-        header.style.background = config.gradient;
-        document.getElementById('yz-result-icon').textContent = config.icon;
-        document.getElementById('yz-result-title').textContent = config.title;
+        if (header) {
+            header.style.background = config.gradient;
+        }
+        const iconEl = document.getElementById('yz-result-icon');
+        const titleEl = document.getElementById('yz-result-title');
+        if (iconEl) iconEl.textContent = config.icon;
+        if (titleEl) titleEl.textContent = config.title;
 
         // 显示加载
-        this.loadingEl.style.display = 'block';
-        this.resultEl.style.display = 'none';
+        if (this.loadingEl) this.loadingEl.style.display = 'block';
+        if (this.resultEl) this.resultEl.style.display = 'none';
 
-        // 显示遮罩和卡片
-        this.overlay.style.display = 'block';
+        // 每次打开都重置为默认大小
+        const defaultWidth = 480;
+        const defaultHeight = 600;
+        this.card.style.setProperty('width', `${defaultWidth}px`, 'important');
+        this.card.style.setProperty('height', `${defaultHeight}px`, 'important');
+
+        // 每次打开都重置为默认位置：完全居中
+        const left = Math.max(20, (window.innerWidth - defaultWidth) / 2);
+        const top = Math.max(20, (window.innerHeight - defaultHeight) / 2);
+        this.card.style.setProperty('left', `${left}px`, 'important');
+        this.card.style.setProperty('top', `${top}px`, 'important');
+
+        // 显示卡片
         this.card.style.display = 'flex';
 
         requestAnimationFrame(() => {
-            this.overlay.style.opacity = '1';
             this.card.style.opacity = '1';
-            this.card.style.transform = 'translate(-50%, -50%) scale(1)';
         });
 
         this.isVisible = true;
@@ -387,12 +586,9 @@ class ResultCard {
         document.removeEventListener('keydown', this.escHandler);
         
         this.card.style.opacity = '0';
-        this.card.style.transform = 'translate(-50%, -50%) scale(0.9)';
-        this.overlay.style.opacity = '0';
 
         setTimeout(() => {
             this.card.style.display = 'none';
-            this.overlay.style.display = 'none';
         }, 300);
 
         this.isVisible = false;
