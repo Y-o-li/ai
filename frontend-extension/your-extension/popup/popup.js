@@ -66,6 +66,10 @@ function bindEvents() {
   document.getElementById('toggleNeutralize').addEventListener('change', (e) => {
     updateFeatureState('neutralize', e.target.checked);
   });
+
+  document.getElementById('toggleToolbar').addEventListener('change', (e) => {
+    updateFeatureState('alwaysShowToolbar', e.target.checked);
+  });
 }
 
 /**
@@ -79,7 +83,8 @@ function updateUI() {
   document.getElementById('toggleFactCheck').checked = currentConfig.enabledFeatures.factCheck;
   document.getElementById('toggleSummarize').checked = currentConfig.enabledFeatures.summarize;
   document.getElementById('toggleNeutralize').checked = currentConfig.enabledFeatures.neutralize;
-  
+  document.getElementById('toggleToolbar').checked = currentConfig.enabledFeatures.alwaysShowToolbar;
+
   // 更新统计（从storage读取）
   updateStats();
 }

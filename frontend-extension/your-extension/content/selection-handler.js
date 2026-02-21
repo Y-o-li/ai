@@ -17,6 +17,7 @@
     // 状态
     let isProcessing = false;
     let hideTimeout = null;
+    let isMouseDown = false;  // 追踪鼠标按下状态
 
     /**
      * 获取选中的文本
@@ -53,15 +54,7 @@
         };
     }
 
-    /**
-     * 检查是否应该显示工具栏
-     * @returns {boolean}
-     */
-    function shouldShowToolbar() {
-        const text = getSelectedText();
-        return text.length >= CONFIG.minSelectionLength &&
-               text.length <= CONFIG.maxSelectionLength;
-    }
+
 
     /**
      * 显示工具栏
@@ -72,11 +65,40 @@
             return;
         }
 
-        const coords = getSelectionCoords();
-        if (!coords) return;
+        // 检查工具栏显示开关
+        if (!window.floatingToolbar.alwaysShow) {
+            return;
+        }
 
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+
+        if (rect.width === 0 || rect.height === 0) return;
+
+        // 检查选区是否在视窗内
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        if (rect.bottom < 0 || rect.top > viewportHeight ||
+            rect.right < 0 || rect.left > viewportWidth) {
+            return;
+        }
+
+        // 更新当前选中的文本
         window.floatingToolbar.currentSelection = getSelectedText();
-        window.floatingToolbar.show();
+
+        // 直接移动工具栏到选中位置
+        window.floatingToolbar.updatePositionFromSelection(rect);
+
+        // 确保工具栏可见
+        if (!window.floatingToolbar.isVisible) {
+            window.floatingToolbar.toolbar.style.display = 'flex';
+            window.floatingToolbar.toolbar.style.opacity = '1';
+            window.floatingToolbar.toolbar.style.transform = 'translateY(0) scale(1)';
+            window.floatingToolbar.isVisible = true;
+        }
     }
 
     /**
@@ -84,6 +106,11 @@
      */
     function hideToolbar() {
         if (typeof window.floatingToolbar === 'undefined') return;
+
+        // 如果工具栏显示开关开启，不隐藏工具栏
+        if (window.floatingToolbar.alwaysShow) {
+            return;
+        }
 
         clearTimeout(hideTimeout);
         hideTimeout = setTimeout(() => {
@@ -100,15 +127,20 @@
         clearTimeout(hideTimeout);
 
         const text = getSelectedText();
-        if (text.length >= CONFIG.minSelectionLength) {
-            // 延迟显示，避免快速拖动时的闪烁
-            setTimeout(() => {
-                if (getSelectedText() === text) {
-                    showToolbar();
-                }
-            }, 100);
+
+        // 检查文本长度是否在有效范围内
+        if (text.length >= CONFIG.minSelectionLength &&
+            text.length <= CONFIG.maxSelectionLength) {
+            showToolbar();
         } else {
-            hideToolbar();
+            // 如果工具栏显示开关开启，不隐藏工具栏
+            if (!(window.floatingToolbar && window.floatingToolbar.alwaysShow)) {
+                // 如果刚刚进行了鼠标框选操作，则不立即隐藏工具栏
+                // 给用户一点时间看到工具栏，如果真的不需要会自动隐藏
+                if (!isMouseDown) {
+                    hideToolbar();
+                }
+            }
         }
     }
 
@@ -121,8 +153,21 @@
             return;
         }
 
-        // 清除选择
-        hideToolbar();
+        // 如果工具栏显示开关开启，不隐藏工具栏
+        if (window.floatingToolbar && window.floatingToolbar.alwaysShow) {
+            return;
+        }
+
+        // 标记鼠标按下状态（用于后续判断是否是框选文本）
+        isMouseDown = true;
+    }
+
+    /**
+     * 处理鼠标松开事件（用于判断是否是框选文本）
+     */
+    function handleMouseUpForSelection(e) {
+        // 重置鼠标按下状态
+        isMouseDown = false;
     }
 
     /**
@@ -143,24 +188,35 @@
         // 鼠标松开时检查选择
         document.addEventListener('mouseup', handleSelection);
 
-        // 鼠标按下时隐藏工具栏
+        // 鼠标按下时隐藏工具栏（如果不是框选文本）
         document.addEventListener('mousedown', handleMouseDown);
+
+        // 鼠标松开时重置框选状态
+        document.addEventListener('mouseup', handleMouseUpForSelection);
 
         // 键盘事件
         document.addEventListener('keydown', handleKeyDown);
-        
+
         // 【添加】快捷键监听
         document.addEventListener('keydown', handleKeyShortcuts);
-        
+
         // 选择变化事件（用于键盘选择）
         document.addEventListener('selectionchange', () => {
             clearTimeout(hideTimeout);
             hideTimeout = setTimeout(handleSelection, 150);
         });
 
-        // 滚动和窗口大小变化时隐藏
-        window.addEventListener('scroll', () => hideToolbar(), { passive: true });
-        window.addEventListener('resize', () => hideToolbar(), { passive: true });
+        // 滚动和窗口大小变化时隐藏（仅在工具栏显示开关关闭时）
+        window.addEventListener('scroll', () => {
+            if (!(window.floatingToolbar && window.floatingToolbar.alwaysShow)) {
+                hideToolbar();
+            }
+        }, { passive: true });
+        window.addEventListener('resize', () => {
+            if (!(window.floatingToolbar && window.floatingToolbar.alwaysShow)) {
+                hideToolbar();
+            }
+        }, { passive: true });
     }
 
     /**

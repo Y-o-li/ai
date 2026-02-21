@@ -56,16 +56,19 @@ class FloatingToolbar {
     async init() {
         // 先监听配置消息（因为 toolbar.js 是动态注入的，无法直接访问 chrome.storage）
         this.listenForConfig();
-        
+
         // 尝试加载配置（如果 chrome API 可用）
         await this.loadConfig();
-        
+
         this.createToolbar();
         this.bindEvents();
 
-        // 如果启用常驻模式，初始化后立即显示
+        // 工具栏显示开关开启时，初始化后立即显示
         if (this.alwaysShow) {
             this.showAtDefaultPosition();
+        } else {
+            // 工具栏显示开关关闭时，保持隐藏状态
+            console.log('[Toolbar] 工具栏显示开关已关闭，工具栏保持隐藏');
         }
     }
 
@@ -85,12 +88,18 @@ class FloatingToolbar {
 
                     // 如果工具栏已创建，根据新配置更新显示状态
                     if (this.toolbar) {
-                        if (this.alwaysShow && !this.isVisible) {
-                            console.log('[Toolbar] 启用常驻模式');
-                            this.showAtDefaultPosition();
-                        } else if (!this.alwaysShow && this.isVisible) {
-                            // 如果关闭常驻模式，隐藏工具栏
-                            this.hide();
+                        if (this.alwaysShow) {
+                            // 工具栏显示开关开启，显示工具栏
+                            console.log('[Toolbar] 启用工具栏显示');
+                            if (!this.isVisible) {
+                                this.showAtDefaultPosition();
+                            }
+                        } else {
+                            // 工具栏显示开关关闭，隐藏工具栏
+                            console.log('[Toolbar] 禁用工具栏显示');
+                            if (this.isVisible) {
+                                this.hide();
+                            }
                         }
                     }
                 }
@@ -202,7 +211,8 @@ class FloatingToolbar {
         if (this.savedPosition) {
             this.applySavedPosition();
         } else {
-            this.toolbar.style.position = 'fixed';
+            // 使用 setProperty 和 !important 来覆盖任何 CSS 规则
+            this.toolbar.style.setProperty('position', 'fixed', 'important');
             this.toolbar.style.left = `${defaultLeft}px`;
             this.toolbar.style.top = `${defaultTop}px`;
         }
@@ -243,17 +253,18 @@ class FloatingToolbar {
         console.log('[Toolbar] Config updated, alwaysShow:', this.alwaysShow);
 
         if (this.alwaysShow) {
+            // 工具栏显示开关开启
             if (!this.isVisible) {
-                console.log('[Toolbar] Enabling always show mode');
+                console.log('[Toolbar] 启用工具栏显示');
                 this.showAtDefaultPosition();
             } else {
                 // 如果已经显示，确保是固定位置
-                console.log('[Toolbar] Already visible, fixing position');
-                this.toolbar.style.position = 'fixed';
+                console.log('[Toolbar] 工具栏已显示，确保固定位置');
+                this.toolbar.style.setProperty('position', 'fixed', 'important');
             }
         } else {
-            // 关闭常驻模式
-            console.log('[Toolbar] Disabling always show mode');
+            // 工具栏显示开关关闭
+            console.log('[Toolbar] 禁用工具栏显示');
             this.hide();
         }
     }
@@ -623,6 +634,12 @@ class FloatingToolbar {
                 left: rect.left,
                 top: rect.top
             });
+
+            // 关键修复：拖动结束后恢复 fixed 定位
+            // 使用 setProperty 和 !important 来覆盖任何 CSS 规则
+            this.toolbar.style.setProperty('position', 'fixed', 'important');
+            this.toolbar.style.left = `${rect.left}px`;
+            this.toolbar.style.top = `${rect.top}px`;
         }
 
         // 延迟重置拖动标志，防止触发点击事件
@@ -669,12 +686,13 @@ class FloatingToolbar {
             const { left, top } = this.savedPosition;
             const toolbarWidth = this.toolbar.offsetWidth || 180;
             const toolbarHeight = this.toolbar.offsetHeight || 60;
-            
+
             // 边界检查，确保工具栏完全在视窗内
             const validLeft = Math.max(10, Math.min(left, window.innerWidth - toolbarWidth - 10));
             const validTop = Math.max(10, Math.min(top, window.innerHeight - toolbarHeight - 10));
 
-            this.toolbar.style.position = 'fixed';
+            // 使用 setProperty 和 !important 来覆盖任何 CSS 规则
+            this.toolbar.style.setProperty('position', 'fixed', 'important');
             this.toolbar.style.left = `${validLeft}px`;
             this.toolbar.style.top = `${validTop}px`;
         }
@@ -684,10 +702,6 @@ class FloatingToolbar {
      * 绑定事件
      */
     bindEvents() {
-        // 监听文本选择
-        document.addEventListener('mouseup', this.handleSelection.bind(this));
-        document.addEventListener('keyup', this.handleSelection.bind(this));
-
         // 监听配置变更（仅当 chrome API 可用时）
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
             chrome.storage.onChanged.addListener((changes, namespace) => {
@@ -697,10 +711,10 @@ class FloatingToolbar {
             });
         }
 
-        // 点击其他地方隐藏（常驻模式下不隐藏）
+        // 点击其他地方隐藏（工具栏显示开关关闭时不隐藏，因为工具栏不会显示）
         document.addEventListener('mousedown', (e) => {
-            if (!this.alwaysShow && !this.toolbar.contains(e.target)) {
-                this.hide();
+            if (this.isVisible && !this.toolbar.contains(e.target)) {
+                // 不隐藏，因为工具栏始终显示
             }
         });
 
@@ -710,35 +724,15 @@ class FloatingToolbar {
     }
 
     /**
-     * 处理滚动事件 - 确保工具栏始终在屏幕可见范围内
+     * 处理滚动事件 - 工具栏保持在屏幕上的固定位置
      */
     handleScroll() {
         if (!this.isVisible || !this.toolbar) return;
 
-        // 如果工具栏使用 absolute 定位，需要检查是否滑出屏幕
-        if (this.toolbar.style.position === 'absolute') {
-            this.keepToolbarInView();
-        }
-
-        // 如果有选中的文本，更新位置跟随选中文本
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0 && !this.alwaysShow) {
-            const range = selection.getRangeAt(0);
-            const rect = range.getBoundingClientRect();
-            
-            // 检查选中文本是否还在视窗内
-            if (rect.width > 0 && rect.height > 0) {
-                this.updatePositionFromSelection(rect);
-            } else {
-                // 选中文本已不在视窗内，隐藏工具栏（非常驻模式）
-                if (!this.alwaysShow) {
-                    this.hide();
-                }
-            }
-        } else if (!this.alwaysShow && !selection.toString().trim()) {
-            // 没有选中文本且非常驻模式，隐藏工具栏
-            this.hide();
-        }
+        // 工具栏使用 fixed 定位，滚动时会自动保持在屏幕上的固定位置
+        // 不需要做任何处理，让工具栏保持在当前位置即可
+        // 只有在工具栏完全滚出视窗时才调整位置
+        this.keepToolbarInView();
     }
 
     /**
@@ -750,39 +744,30 @@ class FloatingToolbar {
         const rect = this.toolbar.getBoundingClientRect();
         const toolbarWidth = this.toolbar.offsetWidth;
         const toolbarHeight = this.toolbar.offsetHeight;
-        
-        let needsUpdate = false;
-        let newLeft = parseFloat(this.toolbar.style.left) || 0;
-        let newTop = parseFloat(this.toolbar.style.top) || 0;
 
-        // 检查是否滑出顶部
-        if (rect.top < 10) {
-            newTop = window.scrollY + 10;
-            needsUpdate = true;
-        }
-        
-        // 检查是否滑出底部
-        if (rect.bottom > window.innerHeight - 10) {
-            newTop = window.scrollY + window.innerHeight - toolbarHeight - 10;
-            needsUpdate = true;
+        // 只有当工具栏完全滚出视窗时才调整位置
+        // 检查是否滑出顶部（完全滚出）
+        if (rect.bottom < 0) {
+            this.toolbar.style.top = `10px`;
+            return;
         }
 
-        // 检查是否滑出左侧
-        if (rect.left < 10) {
-            newLeft = 10;
-            needsUpdate = true;
+        // 检查是否滑出底部（完全滚出）
+        if (rect.top > window.innerHeight) {
+            this.toolbar.style.top = `${window.innerHeight - toolbarHeight - 10}px`;
+            return;
         }
 
-        // 检查是否滑出右侧
-        if (rect.right > window.innerWidth - 10) {
-            newLeft = window.innerWidth - toolbarWidth - 10;
-            needsUpdate = true;
+        // 检查是否滑出左侧（完全滚出）
+        if (rect.right < 0) {
+            this.toolbar.style.left = `10px`;
+            return;
         }
 
-        // 如果需要调整位置，平滑移动
-        if (needsUpdate) {
-            this.toolbar.style.left = `${newLeft}px`;
-            this.toolbar.style.top = `${newTop}px`;
+        // 检查是否滑出右侧（完全滚出）
+        if (rect.left > window.innerWidth) {
+            this.toolbar.style.left = `${window.innerWidth - toolbarWidth - 10}px`;
+            return;
         }
     }
 
@@ -794,16 +779,6 @@ class FloatingToolbar {
 
         // 确保工具栏在视窗内
         this.keepToolbarInView();
-
-        // 如果有选中的文本，更新位置
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0 && !this.alwaysShow) {
-            const range = selection.getRangeAt(0);
-            const rect = range.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-                this.updatePositionFromSelection(rect);
-            }
-        }
     }
 
     /**
@@ -815,19 +790,15 @@ class FloatingToolbar {
         const selection = window.getSelection();
         const text = selection.toString().trim();
 
+        // 如果工具栏显示开关关闭，不处理任何文本选择
+        if (!this.alwaysShow) {
+            return;
+        }
+
         if (text && text.length >= 6) {
             this.currentSelection = text;
-            // 常驻模式下，选中文本后移动工具栏到选中位置
-            if (this.alwaysShow) {
-                this.moveToSelection(selection);
-            } else {
-                this.show();
-            }
-        } else {
-            // 常驻模式下，清空选择后不隐藏，但清空当前选择文本
-            if (!this.alwaysShow) {
-                this.hideTimeout = setTimeout(() => this.hide(), 200);
-            }
+            // 工具栏显示开关开启时，移动工具栏到选中位置
+            this.moveToSelection(selection);
         }
     }
 
@@ -854,18 +825,13 @@ class FloatingToolbar {
 
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
-        
+
         // 使用 fixed 定位，getBoundingClientRect() 返回的是相对于视窗的坐标
-        // 不需要加上 window.scrollY
+        // 工具栏会保持在屏幕上的这个位置，滚动时不会改变
         this.updatePositionFromSelection(rect);
-        
+
         this.toolbar.style.display = 'flex';
-        
-        // 应用保存的位置（如果有，且不是常驻模式）
-        if (this.savedPosition && !this.alwaysShow) {
-            this.applySavedPosition();
-        }
-        
+
         // 触发动画
         requestAnimationFrame(() => {
             this.toolbar.style.opacity = '1';
@@ -882,28 +848,44 @@ class FloatingToolbar {
     updatePositionFromSelection(rect) {
         if (!this.toolbar) return;
 
+        // 关键修复：强制使用 fixed 定位，确保相对于视窗
+        // 使用 setProperty 和 !important 来覆盖任何 CSS 规则
+        this.toolbar.style.setProperty('position', 'fixed', 'important');
+
         // 计算位置（使用 fixed 定位，相对于视窗）
         const toolbarWidth = 180;
         const toolbarHeight = 60;
-        
+
         let left = rect.left + (rect.width / 2) - (toolbarWidth / 2);
-        let top = rect.top - toolbarHeight - 10; // 不需要 window.scrollY
-        
+        let top = rect.top - toolbarHeight - 10;
+
         // 边界检查
         if (left < 10) left = 10;
         if (left + toolbarWidth > window.innerWidth - 10) {
             left = window.innerWidth - toolbarWidth - 10;
         }
-        // 如果上方空间不足，显示在下方
+
+        // 确保工具栏不会超出视窗顶部（至少距离顶部10px）
         if (top < 10) {
+            // 如果上方空间不足，显示在下方
             top = rect.bottom + 10;
+
+            // 如果下方也放不下，就强制放在视窗中间区域
+            if (top + toolbarHeight > window.innerHeight - 10) {
+                top = Math.max(10, (window.innerHeight - toolbarHeight) / 2);
+            }
         }
         // 确保不超出视窗底部
         if (top + toolbarHeight > window.innerHeight - 10) {
             top = window.innerHeight - toolbarHeight - 10;
         }
 
-        this.toolbar.style.position = 'fixed';
+        // 确保工具栏完全在视窗内
+        if (top < 10) top = 10;
+        if (top > window.innerHeight - toolbarHeight - 10) {
+            top = window.innerHeight - toolbarHeight - 10;
+        }
+
         this.toolbar.style.left = `${left}px`;
         this.toolbar.style.top = `${top}px`;
     }
@@ -912,12 +894,6 @@ class FloatingToolbar {
      * 隐藏工具栏
      */
     hide() {
-        if (this.alwaysShow) {
-            // 常驻模式下不隐藏，只清空选择文本
-            this.currentSelection = '';
-            return;
-        }
-
         if (!this.isVisible) return;
 
         this.toolbar.style.opacity = '0';
@@ -957,12 +933,8 @@ class FloatingToolbar {
             text: this.currentSelection
         }, '*');
 
-        // 常驻模式下，执行后不隐藏
-        if (!this.alwaysShow) {
-            this.hide();
-        } else {
-            this.currentSelection = '';
-        }
+        // 执行后清空当前选择文本，但不隐藏工具栏（因为工具栏显示开关开启时，工具栏始终显示）
+        this.currentSelection = '';
     }
 
     /**

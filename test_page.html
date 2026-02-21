@@ -3,257 +3,458 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>煽动性内容检测 - 测试页面</title>
+    <title>言之有理 - 功能测试页面</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-            line-height: 1.8;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
             color: #333;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
         }
-        
+
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .test-section {
             background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-        }
-        
-        h1 {
-            font-size: 28px;
-            color: #1a1a1a;
+            border-radius: 15px;
+            padding: 30px;
             margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 3px solid #1890ff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-        
-        h2 {
-            font-size: 20px;
-            color: #2c3e50;
-            margin: 30px 0 15px 0;
-            padding-left: 12px;
-            border-left: 4px solid #1890ff;
+
+        .section-title {
+            font-size: 1.8em;
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        
-        .section {
-            margin-bottom: 30px;
+
+        .section-icon {
+            font-size: 1.2em;
+        }
+
+        .test-content {
+            font-size: 1.1em;
+            line-height: 2;
             padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 20px;
+        }
+
+        .test-case {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
             border-radius: 8px;
+            transition: all 0.3s ease;
         }
-        
-        .highlight-section {
-            background: #fffbe6;
-            border: 1px dashed #faad14;
+
+        .test-case:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
         }
-        
-        .neutral-section {
-            background: #f0f9eb;
-            border: 1px dashed #52c41a;
+
+        .case-title {
+            font-weight: bold;
+            color: #764ba2;
+            margin-bottom: 10px;
+            font-size: 1.1em;
         }
-        
-        .mixed-section {
-            background: #fff1f0;
-            border: 1px dashed #ff4d4f;
-        }
-        
-        .instruction {
-            background: #e6f7ff;
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            border-left: 4px solid #1890ff;
-        }
-        
-        .instruction h3 {
-            color: #1890ff;
+
+        .case-label {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
             margin-bottom: 10px;
         }
-        
+
+        .label-inciting {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .label-normal {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .label-borderline {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .instruction {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .instruction h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
         .instruction ul {
             margin-left: 20px;
-            color: #555;
         }
-        
+
         .instruction li {
-            margin: 5px 0;
+            margin-bottom: 8px;
         }
-        
-        p {
+
+        .test-info {
+            display: flex;
+            gap: 15px;
             margin-bottom: 15px;
-            text-align: justify;
-            text-indent: 2em;
+            flex-wrap: wrap;
         }
-        
-        .short-text {
-            text-indent: 0;
-        }
-        
-        .test-cases {
-            background: #fafafa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 15px;
-        }
-        
-        .test-case {
-            padding: 12px;
-            margin: 10px 0;
-            background: white;
-            border-radius: 6px;
-            border-left: 3px solid #d9d9d9;
-            font-size: 14px;
-        }
-        
-        .test-case strong {
-            color: #1890ff;
-        }
-        
-        .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #e8e8e8;
-            color: #999;
-            font-size: 13px;
-            text-align: center;
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-right: 8px;
+
+        .info-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9em;
             font-weight: 500;
         }
-        
-        .badge-high {
-            background: #fff1f0;
-            color: #ff4d4f;
-            border: 1px solid #ffccc7;
+
+        .badge-feature {
+            background: #667eea;
+            color: white;
         }
-        
-        .badge-medium {
-            background: #fffbe6;
-            color: #faad14;
-            border: 1px solid #ffe58f;
+
+        .badge-expect {
+            background: #764ba2;
+            color: white;
         }
-        
-        .badge-normal {
-            background: #f0f9eb;
-            color: #52c41a;
-            border: 1px solid #b7eb8f;
+
+        .dynamic-content {
+            padding: 20px;
+            background: #fff3e0;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 2px dashed #ff9800;
+        }
+
+        .dynamic-content h4 {
+            color: #e65100;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔍 煽动性内容检测插件 - 测试页面</h1>
-        
-        <div class="instruction">
-            <h3>📋 测试说明</h3>
-            <ul>
-                <li>确保已加载你的 Chrome 插件</li>
-                <li><strong>本地高亮测试</strong>：观察页面加载后，煽动性词汇是否被自动标红</li>
-                <li><strong>大模型功能测试</strong>：选中任意文本，点击悬浮工具栏的按钮（事实核查/语义总结/中性化改写）</li>
-                <li>建议先用 <strong>Mock API</strong> 测试功能流程，再用真实 API 验证效果</li>
-            </ul>
-        </div>
-        
-        <h2>🔥 高风险煽动性内容</h2>
-        <div class="section highlight-section">
-            <p>我们必须<b>全面封杀</b>这些邪恶的媒体，他们每天都在<b>妖魔化</b>我们伟大的国家！大家要<b>揭竿而起</b>，用暴力手段<b>消灭</b>所有反对者！</p>
-            <p class="short-text">这群<b>卖国贼</b>、<b>汉奸</b>、<b>走狗</b>必须<b>血债血偿</b>！我们要<b>清算</b>他们的<b>罪行</b>！</p>
-            <p>那些<b>反华势力</b>、<b>境外势力</b>正在<b>渗透</b>我们的社会，企图<b>颠覆</b>政权。我们必须<b>坚决斗争</b>，不能有任何妥协！</p>
-        </div>
-        
-        <h2>⚠️ 中等风险煽动性内容</h2>
-        <div class="section mixed-section">
-            <p class="short-text">这种<b>极端</b>的观点简直不可理喻，完全是<b>妖言惑众</b>！</p>
-            <p>我们应该<b>抵制</b>这些<b>恶意</b>报道，不要让他们<b>煽风点火</b>。但是我们可以通过<b>理性讨论</b>来表达不同意见。</p>
-            <p class="short-text">这群<b>暴徒</b>的行为令人发指，必须受到<b>严惩</b>！</p>
-        </div>
-        
-        <h2>✅ 正常中性内容</h2>
-        <div class="section neutral-section">
-            <p>近年来，随着科技的快速发展，人工智能技术已经深入到我们生活的方方面面。从智能语音助手到自动驾驶汽车，AI 正在改变着我们的生活方式。</p>
-            <p>教育是立国之本，人才培养是社会发展的重要基础。我们应该重视教育事业的发展，为下一代创造更好的学习环境和成长机会。</p>
-            <p class="short-text">今天天气真好，适合出去散步。公园里的花开得很漂亮，很多家庭带着孩子在玩耍，一片祥和的景象。</p>
-            <p>在全球化时代，各国之间的经济文化交流日益频繁。通过合作共赢的方式，我们可以共同应对气候变化、疫情防控等全球性挑战。</p>
-        </div>
-        
-        <h2>🧪 特定测试用例（选中测试）</h2>
-        <div class="test-cases">
-            <div class="test-case">
-                <span class="badge badge-high">高风险</span>
-                <strong>事实核查测试</strong>：<span class="test-text">国外媒体声称我国疫苗存在严重安全隐患，这是典型的妖魔化行为！</span>
+        <header>
+            <h1>🎯 言之有理 - 功能测试页面</h1>
+            <p>用于测试四大核心功能：煽动性语言检测、事实核查、语义总结、中性化改写</p>
+        </header>
+
+        <!-- 功能1：煽动性语言检测 -->
+        <section class="test-section">
+            <div class="section-title">
+                <span class="section-icon">🔍</span>
+                功能一：煽动性语言检测
             </div>
-            <div class="test-case">
-                <span class="badge badge-medium">中等</span>
-                <strong>语义总结测试</strong>：<span class="test-text">由于对某项政策的不满，部分网友在网络上发表了一些过激言论，有人呼吁要抵制相关产品，也有人建议通过合法渠道表达诉求。这一事件引发了广泛讨论，各方观点不一。</span>
+
+            <div class="test-content">
+                <p>此功能会自动检测并高亮标记页面中的煽动性词汇和情绪化表达。</p>
+                <p>预期行为：煽动性词语会被高亮显示（黄色/红色背景）</p>
             </div>
+
             <div class="test-case">
-                <span class="badge badge-high">高风险</span>
-                <strong>中性化改写测试</strong>：<span class="test-text">这群卖国贼必须被清算！他们背叛了国家和人民，罪大恶极，应该受到最严厉的惩罚！</span>
+                <div class="case-title">测试用例 1：明显的煽动性语言</div>
+                <span class="case-label label-inciting">应该被检测</span>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">高亮检测</span>
+                    <span class="info-badge badge-expect">预期: 高亮标记</span>
+                </div>
+                <p>这个群体简直是社会的毒瘤，必须彻底消灭他们！我们绝对不能容忍这种败类存在，应该让所有人一起行动起来，把他们赶出去！这种恶劣行为必须受到严厉惩罚，绝不手软！</p>
             </div>
+
             <div class="test-case">
-                <span class="badge badge-normal">正常</span>
-                <strong>正常文本测试</strong>：<span class="test-text">今年上半年，我国新能源汽车销量持续增长，同比增长超过50%。多家车企推出了新的电动车型，技术水平和续航里程都有显著提升。</span>
+                <div class="case-title">测试用例 2：带有攻击性的表述</div>
+                <span class="case-label label-inciting">应该被检测</span>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">高亮检测</span>
+                    <span class="info-badge badge-expect">预期: 高亮标记</span>
+                </div>
+                <p>那些反对我们的人都是无知和愚蠢的，他们根本不配在这个社会立足！我们应该联合起来抵制他们的观点，让他们闭嘴！</p>
             </div>
+
             <div class="test-case">
-                <span class="badge badge-high">高风险</span>
-                <strong>长文本事实核查</strong>：<span class="test-text">据某媒体报道，我国某重要科研项目涉嫌数据造假，大量研究成果都是抄袭国外学者的。该媒体还声称国内学术界普遍存在学术不端行为，监管严重缺失。这些所谓的"爆料"在社交媒体上引发了广泛关注和讨论。</span>
+                <div class="case-title">测试用例 3：中性客观表述</div>
+                <span class="case-label label-normal">不应被检测</span>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">高亮检测</span>
+                    <span class="info-badge badge-expect">预期: 无高亮</span>
+                </div>
+                <p>根据最新的研究数据显示，这项政策在过去三年中取得了显著的成效。研究报告指出，相关指标提升了25%，参与者的满意度也有明显改善。</p>
             </div>
-        </div>
-        
-        <h2>📝 更多测试段落</h2>
-        <div class="section">
-            <p>气候变化是当今世界面临的重大挑战之一。各国政府、企业和个人都应该积极行动起来，减少温室气体排放，推动绿色低碳发展。这不仅关系到我们这一代的福祉，更关系到子孙后代的未来。</p>
-            <p>疫情期间，医护人员奋战在抗疫一线，无私奉献。他们是新时代的英雄，值得我们尊敬和感谢。同时，普通民众也积极配合防控措施，展现了良好的公民素质。</p>
-            <p>随着5G技术的普及，远程办公、在线教育等新业态快速发展。这不仅提高了工作效率，也为人们的学习和生活带来了便利。数字化时代的到来，正在重塑我们的社会结构和商业模式。</p>
-        </div>
-        
-        <div class="footer">
-            <p>本测试页面仅用于插件功能测试，所含煽动性内容为模拟数据，不代表任何真实观点。</p>
-        </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 4：边界情况 - 情绪化但不煽动</div>
+                <span class="case-label label-borderline">边界测试</span>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">高亮检测</span>
+                    <span class="info-badge badge-expect">预期: 可能部分高亮</span>
+                </div>
+                <p>我对这个决定感到非常失望和遗憾。这让我很难接受，但我理解不同的立场。希望未来能有更好的沟通和理解。</p>
+            </div>
+
+            <div class="dynamic-content">
+                <h4>📌 动态内容测试区域</h4>
+                <p>点击下方按钮动态加载测试内容，测试插件的实时检测能力：</p>
+                <button class="btn" onclick="addDynamicContent()">添加动态内容</button>
+                <div id="dynamic-content-area" style="margin-top: 15px;"></div>
+            </div>
+        </section>
+
+        <!-- 功能2：事实核查 -->
+        <section class="test-section">
+            <div class="section-title">
+                <span class="section-icon">📊</span>
+                功能二：事实核查
+            </div>
+
+            <div class="test-content">
+                <p>选中文本后，使用事实核查功能验证信息的真实性。</p>
+                <p><strong>使用方法：</strong>选中下方测试文本 → 点击工具栏的"事实核查"按钮</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 1：疑似虚假信息</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">事实核查</span>
+                    <span class="info-badge badge-expect">预期: AI分析真实性</span>
+                </div>
+                <p>研究表明，每天喝十杯咖啡可以延长寿命50年，这个结论已经被全球100多家顶级医疗机构认证。</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 2：科学声明</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">事实核查</span>
+                    <span class="info-badge badge-expect">预期: AI分析真实性</span>
+                </div>
+                <p>地球围绕太阳公转的周期大约是365.25天，这被称为一个恒星年。</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 3：统计数据</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">事实核查</span>
+                    <span class="info-badge badge-expect">预期: AI分析数据来源</span>
+                </div>
+                <p>根据联合国人口基金会2023年的报告，全球人口已超过80亿，其中亚洲人口占比约为60%。</p>
+            </div>
+        </section>
+
+        <!-- 功能3：语义总结 -->
+        <section class="test-section">
+            <div class="section-title">
+                <span class="section-icon">📝</span>
+                功能三：语义总结
+            </div>
+
+            <div class="test-content">
+                <p>提取文本的核心观点和关键要点，生成简洁的总结。</p>
+                <p><strong>使用方法：</strong>选中下方长文本 → 点击工具栏的"语义总结"按钮</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 1：长段落总结</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">语义总结</span>
+                    <span class="info-badge badge-expect">预期: 提取核心观点</span>
+                </div>
+                <p>人工智能技术的快速发展正在深刻改变着我们的生活和工作方式。从智能助手到自动驾驶，从医疗诊断到金融分析，AI的应用场景日益广泛。然而，与此同时，我们也面临着数据隐私、算法偏见、就业影响等一系列挑战。因此，在推动AI技术进步的同时，我们必须建立健全的监管框架和伦理准则，确保技术的发展能够造福全人类，而不是带来新的风险和不确定性。这需要政府、企业、学术界和公众的共同努力，通过开放对话和协作，找到技术进步与社会福祉之间的平衡点。</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 2：多观点文本总结</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">语义总结</span>
+                    <span class="info-badge badge-expect">预期: 提炼不同观点</span>
+                </div>
+                <p>关于远程办公的利弊，不同专家持有不同看法。支持者认为，远程办公可以节省通勤时间，提高工作灵活性，降低企业运营成本，同时减少碳排放，对环境更加友好。反对者则指出，远程办公可能导致团队协作效率下降，员工社交隔离，工作与生活界限模糊，以及企业文化逐渐淡化。还有专家建议采取混合模式，在保持灵活性的同时，保留必要的面对面交流机会。综合各方观点，没有一种模式适合所有情况，关键是要根据企业文化和工作性质，找到最适合的平衡方案。</p>
+            </div>
+        </section>
+
+        <!-- 功能4：中性化改写 -->
+        <section class="test-section">
+            <div class="section-title">
+                <span class="section-icon">✏️</span>
+                功能四：中性化改写
+            </div>
+
+            <div class="test-content">
+                <p>将情绪化、主观性强的文本改写为客观、中性的表达。</p>
+                <p><strong>使用方法：</strong>选中下方带有强烈情绪的文本 → 点击工具栏的"中性化改写"按钮</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 1：强烈情绪改写</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">中性化改写</span>
+                    <span class="info-badge badge-expect">预期: 转为客观表述</span>
+                </div>
+                <p>这个糟糕的决定简直是一场灾难！完全是愚蠢和短视的表现，根本没有人会支持这种可笑的做法！</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 2：主观评价改写</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">中性化改写</span>
+                    <span class="info-badge badge-expect">预期: 转为事实陈述</span>
+                </div>
+                <p>这个产品太垃圾了，体验极差，完全就是在浪费时间和金钱，强烈建议大家不要购买！</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 3：带有偏见表述改写</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">中性化改写</span>
+                    <span class="info-badge badge-expect">预期: 转为中立观点</span>
+                </div>
+                <p>这个群体总是制造麻烦，他们的观点根本不值得考虑，我们应该完全忽视他们的声音。</p>
+            </div>
+        </section>
+
+        <!-- 使用说明 -->
+        <section class="test-section">
+            <div class="section-title">
+                <span class="section-icon">📖</span>
+                使用说明
+            </div>
+
+            <div class="instruction">
+                <h3>测试步骤：</h3>
+                <ul>
+                    <li><strong>步骤 1：</strong>确保"言之有理"插件已安装并启用</li>
+                    <li><strong>步骤 2：</strong>在Chrome中打开此测试页面（建议使用本地文件服务器，如 Live Server）</li>
+                    <li><strong>步骤 3：</strong>观察页面加载后，煽动性词汇是否自动被高亮标记</li>
+                    <li><strong>步骤 4：</strong>选中任意文本，会自动显示浮动工具栏</li>
+                    <li><strong>步骤 5：</strong>点击工具栏上的不同功能按钮进行测试</li>
+                    <li><strong>步骤 6：</strong>观察AI分析结果是否准确显示</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">功能对比：</h3>
+                <ul>
+                    <li><strong>煽动性语言检测：</strong>自动、实时、无需选中</li>
+                    <li><strong>事实核查：</strong>需要选中文本，验证信息真实性</li>
+                    <li><strong>语义总结：</strong>需要选中文本，提取核心观点</li>
+                    <li><strong>中性化改写：</strong>需要选中文本，改写为客观表达</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">注意事项：</h3>
+                <ul>
+                    <li>AI功能需要在设置页面配置API密钥（通义千问/智谱GLM/文心一言）</li>
+                    <li>首次使用可能需要等待几秒钟的API响应</li>
+                    <li>确保网络连接正常，API服务可访问</li>
+                    <li>测试结果仅供参考，不代表最终事实判断</li>
+                </ul>
+            </div>
+        </section>
+
+        <footer>
+            <p>© 2026 言之有理 - AI内容分析助手 | 功能测试页面 v1.0</p>
+            <p>如有问题或建议，请通过插件反馈渠道联系我们</p>
+        </footer>
     </div>
-    
+
     <script>
-        // 可选：添加一些交互提示，方便测试
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🧪 测试页面已加载');
-            console.log('📌 提示：选中任意文本后，应该会看到插件的工具栏');
-            console.log('✨ 检查页面是否自动高亮了煽动性词汇');
-            
-            // 统计页面中的敏感词数量（用于验证）
-            const sensitivePatterns = [
-                '封杀', '妖魔化', '揭竿而起', '消灭', 
-                '卖国贼', '汉奸', '走狗', '血债血偿',
-                '清算', '反华势力', '境外势力', '渗透',
-                '颠覆', '极端', '妖言惑众', '抵制', '煽风点火',
-                '暴徒', '严惩'
+        // 动态添加测试内容
+        function addDynamicContent() {
+            const area = document.getElementById('dynamic-content-area');
+            const timestamp = new Date().toLocaleTimeString();
+
+            const dynamicTests = [
+                "这些反对派简直是无耻之徒，必须给予最严厉的打击！",
+                "根据最新统计，2024年全球可再生能源投资增长15%。",
+                "我对于这个结果感到非常高兴，这是大家的共同努力。",
+                "这种极端的观点令人无法接受，必须予以谴责！"
             ];
-            
-            let totalCount = 0;
-            const bodyText = document.body.innerText;
-            
-            sensitivePatterns.forEach(word => {
-                const count = (bodyText.match(new RegExp(word, 'g')) || []).length;
-                if (count > 0) {
-                    console.log(`敏感词 "${word}": ${count} 处`);
-                    totalCount += count;
-                }
-            });
-            
-            console.log(`🔍 预计应高亮敏感词总数: ${totalCount} 处`);
+
+            const testIndex = Math.floor(Math.random() * dynamicTests.length);
+            const testText = dynamicTests[testIndex];
+
+            const newContent = document.createElement('div');
+            newContent.className = 'test-case';
+            newContent.innerHTML = `
+                <div class="case-title">动态内容 - ${timestamp}</div>
+                <span class="case-label label-borderline">实时检测</span>
+                <p>${testText}</p>
+            `;
+
+            area.appendChild(newContent);
+        }
+
+        // 页面加载完成后的提示
+        window.addEventListener('load', function() {
+            console.log('🎯 言之有理测试页面已加载');
+            console.log('📝 测试功能：煽动性语言检测、事实核查、语义总结、中性化改写');
+            console.log('💡 提示：请确保插件已启用并配置了API密钥');
         });
     </script>
 </body>

@@ -13,7 +13,7 @@ const DEFAULT_CONFIG = {
     factCheck: true,
     summarize: true,
     neutralize: true,
-    alwaysShowToolbar: false
+    alwaysShowToolbar: true
   }
 };
 
