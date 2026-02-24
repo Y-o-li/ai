@@ -12,6 +12,7 @@ class FloatingToolbar {
         this.hideTimeout = null;
         this.alwaysShow = false; // 是否常驻
         this.configLoaded = false; // 配置是否已加载
+        this.currentTheme = 'light'; // 当前主题
         
         // 拖动相关状态
         this.isDragging = false;
@@ -54,103 +55,35 @@ class FloatingToolbar {
             }
         ];
         
-        this.init();
-    }
-
-    /**
-     * 初始化工具栏
-     */
-    async init() {
-        // 先监听配置消息（因为 toolbar.js 是动态注入的，无法直接访问 chrome.storage）
-        this.listenForConfig();
-
-        // 尝试加载配置（如果 chrome API 可用）
-        await this.loadConfig();
-
-        this.createToolbar();
-        this.bindEvents();
-
-        // 工具栏显示开关开启时，初始化后立即显示
-        if (this.alwaysShow) {
-            this.showAtDefaultPosition();
-        } else {
-            // 工具栏显示开关关闭时，保持隐藏状态
-            console.log('[Toolbar] 工具栏显示开关已关闭，工具栏保持隐藏');
+        this.initTheme();
+        
+        // 加载配置
+        this.loadConfig();
+        
+        // 监听主题变更消息
+        this.setupThemeListener();
+        
+        // 如果配置已加载且设置为常驻显示，则显示工具栏
+        if (this.configLoaded && this.alwaysShow && !this.isVisible) {
+            console.log('[Toolbar] 构造函数中检测到常驻显示设置，显示工具栏');
+            // 延迟一点确保DOM完全就绪
+            setTimeout(() => {
+                this.showAtDefaultPosition();
+            }, 100);
         }
     }
 
     /**
-     * 监听配置消息和响应
+     * 初始化主题
      */
-    listenForConfig() {
-        window.addEventListener('message', (event) => {
-            // 配置消息（来自 content-script）
-            if (event.data && event.data.type === 'YANZHI_YOULI_CONFIG' && event.data.config) {
-                console.log('[Toolbar] 收到配置消息:', event.data.config);
-
-                if (event.data.config.alwaysShowToolbar !== undefined) {
-                    this.alwaysShow = event.data.config.alwaysShowToolbar;
-                    this.configLoaded = true;
-                    console.log('[Toolbar] 配置已更新，alwaysShowToolbar:', this.alwaysShow);
-
-                    // 如果工具栏已创建，根据新配置更新显示状态
-                    if (this.toolbar) {
-                        if (this.alwaysShow) {
-                            // 工具栏显示开关开启，显示工具栏
-                            console.log('[Toolbar] 启用工具栏显示');
-                            if (!this.isVisible) {
-                                this.showAtDefaultPosition();
-                            }
-                        } else {
-                            // 工具栏显示开关关闭，隐藏工具栏
-                            console.log('[Toolbar] 禁用工具栏显示');
-                            if (this.isVisible) {
-                                this.hide();
-                            }
-                        }
-                    }
-                }
-            }
-
-            // LLM响应消息
-            if (event.data && event.data.type === 'YANZHI_YOULI_LLM_RESPONSE') {
-                (async () => {
-                    console.log('[Toolbar] 收到LLM响应:', event.data);
-
-                    if (event.data.success) {
-                        // 显示结果卡片
-                        if (window.resultCard) {
-                            window.resultCard.show(event.data.result, event.data.action);
-                        }
-
-                        // 自动保存到历史记录
-                        console.log('[Toolbar] 尝试保存到历史记录', {
-                            hasHistoryManager: !!window.historyManager,
-                            action: event.data.action,
-                            hasSelection: !!window.floatingToolbar?.currentSelection
-                        });
-
-                        if (window.historyManager) {
-                            try {
-                                const saved = await window.historyManager.add(
-                                    event.data.action,
-                                    window.floatingToolbar?.currentSelection || '',
-                                    event.data.result
-                                );
-                                console.log('[Toolbar] 保存结果:', saved ? '成功' : '失败', saved);
-                            } catch (error) {
-                                console.error('[Toolbar] 保存异常:', error);
-                            }
-                        } else {
-                            console.warn('[Toolbar] historyManager 不存在');
-                        }
-                    } else {
-                        console.error('[Toolbar] 处理失败:', event.data?.error);
-                        this.showError(event.data?.error || '处理失败，请检查API配置');
-                    }
-                })();
-            }
-        });
+    initTheme() {
+        // 默认使用亮色主题
+        this.currentTheme = 'light';
+        
+        // 尝试从页面获取主题
+        if (document.documentElement.classList.contains('yz-dark-theme')) {
+            this.currentTheme = 'dark';
+        }
     }
 
     /**
@@ -158,42 +91,128 @@ class FloatingToolbar {
      */
     async loadConfig() {
         try {
-            // 检查 chrome API 是否可用
-            // 注意：toolbar.js 是动态注入到页面的脚本，运行在页面上下文中
-            // 无法直接访问 chrome.storage API，这是正常行为
-            if (typeof chrome === 'undefined' || !chrome.storage) {
-                // 使用全局配置作为后备方案（由 content-script 设置）
-                if (window.yanzhiYouliConfig && window.yanzhiYouliConfig.alwaysShowToolbar !== undefined) {
-                    this.alwaysShow = window.yanzhiYouliConfig.alwaysShowToolbar;
-                    console.log('[Toolbar] 从全局配置读取 alwaysShowToolbar:', this.alwaysShow);
-                } else {
-                    // 如果全局配置也未设置，等待 content-script 通过 postMessage 发送配置
-                    this.alwaysShow = false;
-                    console.log('[Toolbar] 等待 content-script 发送配置...');
-                }
-                this.configLoaded = true;
-                return;
-            }
-
-            // 如果 chrome.storage 可用（理论上不应该发生，但保留作为备用）
-            const result = await chrome.storage.local.get('config');
-            console.log('[Toolbar] Loaded config:', result.config);
-            if (result.config && result.config.enabledFeatures) {
-                this.alwaysShow = result.config.enabledFeatures.alwaysShowToolbar || false;
-                console.log('[Toolbar] alwaysShowToolbar setting:', this.alwaysShow);
+            // 默认配置
+            let config = {
+                alwaysShowToolbar: false,
+                theme: 'light'
+            };
+            
+            // 由于 toolbar.js 在页面上下文中运行，无法直接访问 chrome.storage
+            // 改为从 content script 请求配置
+            if (window.parent && window.parent !== window) {
+                // 如果在 iframe 中，尝试向父窗口请求配置
+                console.log('[Toolbar] 尝试从父窗口请求配置');
+                window.parent.postMessage({
+                    type: 'YANZHI_YOULI_GET_CONFIG'
+                }, '*');
+                
+                // 等待配置响应（简单实现，实际应用中可能需要更复杂的机制）
+                // 这里我们先使用默认配置，配置会通过 YANZHI_YOULI_CONFIG 消息更新
             } else {
-                // 尝试从全局配置读取
-                if (window.yanzhiYouliConfig && window.yanzhiYouliConfig.alwaysShowToolbar !== undefined) {
-                    this.alwaysShow = window.yanzhiYouliConfig.alwaysShowToolbar;
-                    console.log('[Toolbar] 从全局配置读取 alwaysShowToolbar:', this.alwaysShow);
-                }
+                // 直接向 content script 请求配置
+                console.log('[Toolbar] 尝试从 content script 请求配置');
+                window.postMessage({
+                    type: 'YANZHI_YOULI_GET_CONFIG'
+                }, '*');
             }
+            
+            // 立即应用默认配置，后续会通过消息更新
+            this.alwaysShow = config.alwaysShowToolbar;
+            this.setTheme(config.theme);
             this.configLoaded = true;
+            
+            console.log('[Toolbar] 使用初始默认配置:', config);
+            
         } catch (error) {
             console.error('[Toolbar] 加载配置失败:', error);
-            this.alwaysShow = false;
             this.configLoaded = true;
         }
+    }
+
+    /**
+     * 设置主题监听器
+     */
+    setupThemeListener() {
+        // 监听来自content script的主题变更消息
+        window.addEventListener('message', (event) => {
+            if (event.source !== window) return;
+            
+            if (event.data.type === 'YANZHI_YOULI_THEME_CHANGED') {
+                this.setTheme(event.data.theme);
+            }
+            // 新增：监听配置变更消息
+            else if (event.data.type === 'YANZHI_YOULI_CONFIG') {
+                console.log('[Toolbar] 收到配置变更消息', event.data.config);
+                this.updateConfigFromMessage(event.data.config);
+            }
+        });
+        
+        // 监听来自扩展API的消息（主题变更和配置变更）
+        if (chrome.runtime && chrome.runtime.onMessage) {
+            chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+                if (request.action === 'themeChanged') {
+                    this.setTheme(request.theme);
+                    sendResponse({ success: true });
+                    return true;
+                }
+                // 新增：监听配置变更
+                else if (request.action === 'configUpdated') {
+                    console.log('[Toolbar] 收到配置更新消息', request.config);
+                    this.updateConfigFromMessage(request.config);
+                    sendResponse({ success: true });
+                    return true;
+                }
+            });
+        }
+    }
+
+    /**
+     * 从消息更新配置
+     * @param {Object} config - 配置对象
+     */
+    async updateConfigFromMessage(config) {
+        if (!config) return;
+        
+        // 更新 alwaysShow 设置
+        if (typeof config.alwaysShowToolbar === 'boolean') {
+            this.alwaysShow = config.alwaysShowToolbar;
+        }
+        
+        // 更新主题设置
+        if (config.theme) {
+            this.setTheme(config.theme);
+        }
+        
+        this.configLoaded = true;
+        
+        // 根据配置决定是否显示工具栏
+        if (this.alwaysShow && !this.isVisible) {
+            console.log('[Toolbar] 根据配置显示工具栏');
+            this.showAtDefaultPosition();
+        } else if (!this.alwaysShow && this.isVisible) {
+            console.log('[Toolbar] 根据配置隐藏工具栏');
+            this.hide();
+        }
+    }
+
+    /**
+     * 设置主题
+     * @param {string} theme - 主题模式 ('light' | 'dark')
+     */
+    setTheme(theme) {
+        if (this.currentTheme === theme) return;
+        
+        this.currentTheme = theme;
+        
+        if (!this.toolbar) return;
+        
+        if (theme === 'dark') {
+            this.toolbar.classList.add('yz-toolbar-dark');
+        } else {
+            this.toolbar.classList.remove('yz-toolbar-dark');
+        }
+        
+        console.log('🎨 工具栏主题已切换:', theme);
     }
 
     /**
@@ -207,6 +226,14 @@ class FloatingToolbar {
             console.warn('[Toolbar] Body not ready, retrying...');
             setTimeout(() => this.showAtDefaultPosition(), 100);
             return;
+        }
+
+        // 确保工具栏DOM已创建
+        if (!this.toolbar) {
+            console.log('[Toolbar] 工具栏DOM不存在，正在创建...');
+            this.createToolbar();
+            this.attachEventListeners();
+            console.log('[Toolbar] 工具栏DOM创建完成');
         }
 
         const defaultTop = 100;
@@ -507,6 +534,91 @@ class FloatingToolbar {
         });
 
         return button;
+    }
+
+    /**
+     * 附加事件监听器
+     */
+    attachEventListeners() {
+        if (!this.toolbar) return;
+
+        // 为每个按钮添加事件监听器
+        this.buttons.forEach(btn => {
+            const button = document.getElementById(btn.id);
+            if (button) {
+                // 鼠标悬停显示提示
+                button.addEventListener('mouseenter', () => {
+                    this.showTooltip(button, btn.label);
+                });
+
+                button.addEventListener('mouseleave', () => {
+                    this.hideTooltip();
+                });
+
+                // 点击事件（拖动时不触发）
+                button.addEventListener('click', (e) => {
+                    if (this.hasDragged) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.handleAction(btn.action);
+                });
+            }
+        });
+
+        // 关闭按钮事件
+        const closeBtn = this.toolbar.querySelector('.yz-close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                if (this.hasDragged) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                this.hide();
+            });
+        }
+
+        // 拖动手柄事件
+        const dragHandle = this.toolbar.querySelector('.yz-drag-handle');
+        if (dragHandle) {
+            dragHandle.addEventListener('mouseenter', () => {
+                dragHandle.style.background = 'rgba(255, 255, 255, 0.15)';
+                dragHandle.style.color = 'rgba(255, 255, 255, 0.9)';
+            });
+
+            dragHandle.addEventListener('mouseleave', () => {
+                dragHandle.style.background = 'transparent';
+                dragHandle.style.color = 'rgba(255, 255, 255, 0.7)';
+            });
+
+            dragHandle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.startDrag(e);
+            });
+        }
+
+        // 监听配置变更（仅当 chrome API 可用时）
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+            chrome.storage.onChanged.addListener((changes, namespace) => {
+                if (namespace === 'local' && changes.config) {
+                    this.updateConfig();
+                }
+            });
+        }
+
+        // 点击其他地方隐藏（工具栏显示开关关闭时不隐藏，因为工具栏不会显示）
+        document.addEventListener('mousedown', (e) => {
+            if (this.isVisible && !this.toolbar.contains(e.target)) {
+                // 不隐藏，因为工具栏始终显示
+            }
+        });
     }
 
     /**
@@ -1028,6 +1140,11 @@ class FloatingToolbar {
     }
 }
 
+// 暴露 FloatingToolbar 类到全局
+console.log('[Toolbar] 即将暴露 FloatingToolbar 类');
+window.FloatingToolbar = FloatingToolbar;
+console.log('[Toolbar] 已暴露 FloatingToolbar 类:', !!window.FloatingToolbar);
+
 // 创建全局实例
 if (typeof window !== 'undefined') {
     console.log('[Toolbar] 检查初始化时机, document.readyState:', document.readyState);
@@ -1045,4 +1162,7 @@ if (typeof window !== 'undefined') {
     }
 
     console.log('[Toolbar] window.floatingToolbar 是否存在:', !!window.floatingToolbar);
+    
+    // 暴露 FloatingToolbar 类到全局，供 content-script.js 初始化控制
+    window.FloatingToolbar = FloatingToolbar;
 }

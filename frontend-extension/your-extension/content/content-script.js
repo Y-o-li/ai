@@ -15,13 +15,223 @@
     window.yanzhiYouliLoaded = true;
 
     console.log('🎯 言之有理插件内容脚本已加载');
+    
+    // 初始化主题
+    initTheme().then(() => {
+        // 主题初始化完成后，加载并发送配置
+        return getConfig();
+    }).then(config => {
+        // 通知工具栏配置
+        notifyConfigChange(config);
+    });
+    
+    // 监听来自扩展的消息
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.action === 'themeChanged') {
+            applyThemeToPage(request.theme);
+            sendResponse({ success: true });
+            return true;
+        }
+        
+        if (request.action === 'getCurrentSystemTheme') {
+            sendResponse({ theme: detectSystemTheme() });
+            return true;
+        }
+    });
+    
+    window.addEventListener('message', (event) => {
+        if (event.source !== window) return;
+        
+        if (event.data.type === 'YANZHI_YOULI_THEME_CHANGED') {
+            applyThemeToPage(event.data.theme);
+        }
+        // 处理配置获取请求
+        else if (event.data.type === 'YANZHI_YOULI_GET_CONFIG') {
+            console.log('[Content Script] 收到配置获取请求');
+            getConfig().then(config => {
+                // 发送配置给请求者
+                window.postMessage({
+                    type: 'YANZHI_YOULI_CONFIG',
+                    config: config
+                }, '*');
+                console.log('[Content Script] 已发送配置响应:', config);
+            });
+        }
+    });
+    
+    /**
+     * 初始化主题
+     */
+    async function initTheme() {
+        try {
+            // 获取当前主题
+            const theme = await getCurrentTheme();
+            applyThemeToPage(theme);
+            
+            // 开始监听系统主题变化
+            watchSystemTheme();
+            
+            console.log('🎨 主题初始化完成:', theme);
+            return theme;
+        } catch (error) {
+            console.error('主题初始化失败:', error);
+            const fallbackTheme = detectSystemTheme();
+            applyThemeToPage(fallbackTheme);
+            return fallbackTheme;
+        }
+    }
 
-    // 配置
-    const CONFIG = {
-        highlightEnabled: true,
-        selectionEnabled: true,
-        minTextLength: 5
-    };
+// 配置
+const CONFIG = {
+    highlightEnabled: true,
+    selectionEnabled: true,
+    minTextLength: 5
+};
+
+// 主题管理
+let currentTheme = 'light';
+let systemThemeMediaQuery = null;
+
+// 配置管理
+let cachedConfig = {
+    alwaysShowToolbar: false,
+    theme: 'light'
+};
+
+/**
+ * 检测系统主题
+ * @returns {string} 主题模式 (light/dark)
+ */
+function detectSystemTheme() {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+    }
+    return 'light';
+}
+
+/**
+ * 监听系统主题变化
+ */
+function watchSystemTheme() {
+    if (window.matchMedia) {
+        systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        
+        systemThemeMediaQuery.addEventListener('change', (e) => {
+            const newTheme = e.matches ? 'dark' : 'light';
+            if (newTheme !== currentTheme) {
+                currentTheme = newTheme;
+                notifyThemeChange(currentTheme);
+            }
+        });
+    }
+}
+
+/**
+ * 通知主题变更
+ * @param {string} theme - 主题模式
+ */
+function notifyThemeChange(theme) {
+    // 向所有扩展组件发送主题变更消息
+    chrome.runtime.sendMessage({
+        action: 'themeChanged',
+        theme: theme
+    }).catch(() => {});
+    
+    // 向页面内的扩展UI组件发送消息
+    window.postMessage({
+        type: 'YANZHI_YOULI_THEME_CHANGED',
+        theme: theme
+    }, '*');
+}
+
+/**
+ * 获取当前主题
+ * @returns {Promise<string>} 主题模式
+ */
+async function getCurrentTheme() {
+    try {
+        const response = await chrome.runtime.sendMessage({ action: 'getCurrentTheme' });
+        return response.theme || detectSystemTheme();
+    } catch (error) {
+        console.error('获取主题失败:', error);
+        return detectSystemTheme();
+    }
+}
+
+/**
+ * 获取配置
+ * @returns {Promise<Object>} 配置对象
+ */
+async function getConfig() {
+    try {
+        const result = await chrome.storage.sync.get({
+            alwaysShowToolbar: false,
+            theme: 'light'
+        });
+        cachedConfig = { ...cachedConfig, ...result };
+        console.log('[Content Script] 从storage加载配置:', cachedConfig);
+        return cachedConfig;
+    } catch (error) {
+        console.error('[Content Script] 获取配置失败:', error);
+        return cachedConfig;
+    }
+}
+
+/**
+ * 保存配置
+ * @param {Object} config - 配置对象
+ * @returns {Promise<void>}
+ */
+async function saveConfig(config) {
+    try {
+        await chrome.storage.sync.set(config);
+        cachedConfig = { ...cachedConfig, ...config };
+        console.log('[Content Script] 配置已保存:', cachedConfig);
+        
+        // 通知所有组件配置已更新
+        notifyConfigChange(cachedConfig);
+    } catch (error) {
+        console.error('[Content Script] 保存配置失败:', error);
+    }
+}
+
+/**
+ * 通知配置变更
+ * @param {Object} config - 配置对象
+ */
+function notifyConfigChange(config) {
+    // 发送消息给页面中的组件
+    window.postMessage({
+        type: 'YANZHI_YOULI_CONFIG',
+        config: config
+    }, '*');
+    
+    console.log('[Content Script] 已通知配置变更:', config);
+}
+
+/**
+ * 应用主题到页面
+ * @param {string} theme - 主题模式
+ */
+function applyThemeToPage(theme) {
+    currentTheme = theme;
+    
+    // 添加或移除暗色模式类
+    if (theme === 'dark') {
+        document.documentElement.classList.add('yz-dark-theme');
+    } else {
+        document.documentElement.classList.remove('yz-dark-theme');
+    }
+    
+    // 通知工具栏和结果卡片
+    if (window.floatingToolbar) {
+        window.floatingToolbar.setTheme(theme);
+    }
+    
+    if (window.resultCard) {
+        window.resultCard.setTheme(theme);
+    }
+}
 
     // 加载外部脚本
     function loadScript(src) {
@@ -29,7 +239,10 @@
             const script = document.createElement('script');
             script.src = chrome.runtime.getURL(src);
             script.onload = resolve;
-            script.onerror = reject;
+            script.onerror = (e) => {
+                console.error('[ContentScript] 加载脚本失败:', src, e);
+                reject(e);
+            };
             document.head.appendChild(script);
         });
     }

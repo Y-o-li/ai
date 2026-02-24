@@ -3,6 +3,10 @@
   "name": "言之有理 - AI内容分析助手 v2",
   "version": "3.0.0",
   "description": "智能识别煽动性语言、事实核查、语义总结和中性化改写",
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
   "author": "Yanzhi Youli Team",
   "homepage_url": "https://github.com/your-repo/yanzhi-youli",
   
@@ -25,11 +29,6 @@
       "128": "assets/icons/icon128.png"
     },
     "default_title": "言之有理 - AI内容分析助手"
-  },
-  
-  "background": {
-    "service_worker": "background/service-worker.js",
-    "type": "module"
   },
   
   "content_scripts": [

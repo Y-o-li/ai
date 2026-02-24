@@ -20,8 +20,193 @@ const DEFAULT_CONFIG = {
     factCheck: true,
     summarize: true,
     neutralize: true
+  },
+  theme: {
+    mode: 'auto', // auto, light, dark
+    followSystem: true
   }
 };
+
+// 默认统计数据
+const DEFAULT_STATS = {
+  factCheckCount: 0,
+  summarizeCount: 0,
+  neutralizeCount: 0,
+  apiCallCount: 0,
+  totalTokens: 0,
+  today: new Date().toISOString().split('T')[0]
+};
+
+/**
+ * 获取当前主题模式
+ * @returns {Promise<string>} 主题模式 (light/dark)
+ */
+async function getCurrentTheme() {
+  try {
+    const config = await getConfig();
+    
+    // 防御：确保 theme 对象存在
+    const themeConfig = config.theme || {};
+    
+    // 如果设置为手动模式
+    if (themeConfig.mode === 'light' || themeConfig.mode === 'dark') {
+      return themeConfig.mode;
+    }
+    
+    // 兼容旧数据：theme 直接存字符串 'dark' 或 'light'
+    if (typeof themeConfig === 'string' && (themeConfig === 'light' || themeConfig === 'dark')) {
+      return themeConfig;
+    }
+    
+    // 自动模式或跟随系统
+    if (themeConfig.followSystem) {
+      // 向所有popup发送查询系统主题的请求
+      const response = await chrome.runtime.sendMessage({ action: 'getCurrentSystemTheme' });
+      return response.theme || 'light';
+    }
+    
+    return 'light';
+  } catch (error) {
+    console.error('获取主题失败:', error);
+    return 'light';
+  }
+}
+
+
+/**
+ * 更新主题配置
+ * @param {Object} themeConfig - 主题配置
+ */
+async function updateThemeConfig(themeConfig) {
+  try {
+    console.log('[Background] 开始更新主题配置:', themeConfig);
+    const config = await getConfig();
+    console.log('[Background] 更新前的配置:', JSON.stringify(config.theme));
+    
+    // 确保theme对象存在
+    if (!config.theme) {
+      config.theme = {};
+    }
+    
+    // 合并主题配置
+    config.theme = { ...config.theme, ...themeConfig };
+    console.log('[Background] 合并后的主题配置:', JSON.stringify(config.theme));
+    
+    // 保存配置
+    await saveConfig(config);
+    console.log('[Background] 配置已保存');
+    
+    // 验证保存结果
+    const savedConfig = await getConfig();
+    console.log('[Background] 保存后验证:', JSON.stringify(savedConfig.theme));
+    
+    // 广播主题变更
+    broadcastThemeChange();
+    
+    return { success: true };
+  } catch (error) {
+    console.error('更新主题配置失败:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 广播主题变更（增强版）
+ */
+async function broadcastThemeChange() {
+  try {
+    const theme = await getCurrentTheme();
+    console.log('[Background] 开始广播主题变更:', theme);
+    
+    // 首先通知Popup更新显示
+    chrome.runtime.sendMessage({
+      action: 'themeChanged',
+      theme: theme
+    }).catch(() => {});
+    
+    // 通知所有标签页
+    const tabs = await chrome.tabs.query({});
+    console.log('[Background] 发现标签页数量:', tabs.length);
+    
+    let successCount = 0;
+    for (const tab of tabs) {
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          action: 'themeChanged',
+          theme: theme
+        });
+        successCount++;
+        console.log(`[Background] 通知标签页 ${tab.id} 成功`);
+      } catch (error) {
+        console.log(`[Background] 通知标签页 ${tab.id} 失败:`, error.message);
+        
+        // 兜底方案：直接执行脚本
+        if (tab.url?.startsWith('http')) {
+          try {
+            await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: (targetTheme) => {
+                console.log('[Injected] 执行注入脚本，主题:', targetTheme);
+                
+                // 应用主题
+                if (targetTheme === 'dark') {
+                  document.documentElement.classList.add('yz-dark-theme');
+                  document.body.style.backgroundColor = '#1e1e1e';
+                  document.body.style.color = '#e0e0e0';
+                } else {
+                  document.documentElement.classList.remove('yz-dark-theme');
+                  document.body.style.backgroundColor = '#ffffff';
+                  document.body.style.color = '#000000';
+                }
+                
+                document.body.style.transition = 'all 0.3s ease';
+                
+                // 通知组件
+                if (window.floatingToolbar) {
+                  window.floatingToolbar.setTheme(targetTheme);
+                }
+                if (window.resultCard) {
+                  window.resultCard.setTheme(targetTheme);
+                }
+              },
+              args: [theme]
+            });
+            console.log(`[Background] 注入脚本成功: ${tab.id}`);
+          } catch (injectError) {
+            console.error(`[Background] 注入脚本失败 ${tab.id}:`, injectError.message);
+          }
+        }
+      }
+    }
+    
+    console.log(`[Background] 广播完成: ${successCount}/${tabs.length} 成功`);
+  } catch (error) {
+    console.error('[Background] 广播主题变更失败:', error);
+  }
+}
+
+/**
+ * 获取统计数据
+ * @returns {Promise<Object>} 统计对象
+ */
+async function handleGetStats() {
+  try {
+    const result = await chrome.storage.local.get('stats');
+    let stats = result.stats || DEFAULT_STATS;
+    
+    // 检查是否是新的一天，如果是则重置
+    const today = new Date().toISOString().split('T')[0];
+    if (stats.today !== today) {
+      stats = { ...DEFAULT_STATS, today };
+      await chrome.storage.local.set({ stats });
+    }
+    
+    return { success: true, stats };
+  } catch (error) {
+    console.error('获取统计失败:', error);
+    return { success: false, error: error.message };
+  }
+}
 
 /**
  * 初始化Service Worker
@@ -41,8 +226,20 @@ async function initialize() {
  * @returns {Promise<Object>} 配置对象
  */
 async function getConfig() {
+  console.log('[Background] 开始获取配置');
   const result = await chrome.storage.local.get('config');
-  return result.config || DEFAULT_CONFIG;
+  console.log('[Background] 从storage读取到的配置:', JSON.stringify(result.config));
+  
+  if (!result.config) {
+    console.log('[Background] 配置不存在，返回默认配置');
+    return DEFAULT_CONFIG;
+  }
+  
+  // 确保配置结构完整
+  const mergedConfig = { ...DEFAULT_CONFIG, ...result.config };
+  console.log('[Background] 合并后的完整配置:', JSON.stringify(mergedConfig, null, 2));
+  
+  return mergedConfig;
 }
 
 /**
@@ -288,7 +485,10 @@ async function handleLLMRequest(request) {
 
     // 处理请求
     const result = await llmProcessor.process(request.type, request.text);
-    
+
+    // 更新统计
+    await updateStats(request.type, request.text, result.result || '');
+
     return { success: true, result };
   } catch (error) {
     console.error('LLM处理失败:', error);
@@ -296,6 +496,55 @@ async function handleLLMRequest(request) {
       success: false, 
       error: error.message || '处理失败，请检查网络连接和API配置' 
     };
+  }
+}
+
+/**
+ * 更新统计数据
+ * @param {string} type - 功能类型
+ * @param {string} text - 输入文本
+ * @param {string} output - 输出结果（可选）
+ */
+async function updateStats(type, text, output = '') {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 获取现有统计
+    const storageResult = await chrome.storage.local.get('stats');
+    let stats = storageResult.stats || DEFAULT_STATS;
+    
+    // 如果是新的一天，重置每日统计
+    if (stats.today !== today) {
+      stats = { ...DEFAULT_STATS, today };
+    }
+    
+    // 更新对应功能的计数
+    switch (type) {
+      case 'factCheck':
+        stats.factCheckCount++;
+        break;
+      case 'summarize':
+        stats.summarizeCount++;
+        break;
+      case 'neutralize':
+        stats.neutralizeCount++;
+        break;
+    }
+    
+    // API调用次数+1（每次LLM请求都算一次API调用）
+    stats.apiCallCount++;
+    
+    // 估算tokens使用量（粗略估算：输入+输出各约按字符数/2估算）
+    const estimatedInputTokens = Math.ceil(text.length / 2);
+    const estimatedOutputTokens = Math.ceil(output.length / 2);
+    stats.totalTokens += (estimatedInputTokens + estimatedOutputTokens);
+    
+    // 保存统计
+    await chrome.storage.local.set({ stats });
+    
+    console.log('📊 统计已更新:', stats);
+  } catch (error) {
+    console.error('更新统计失败:', error);
   }
 }
 
@@ -377,6 +626,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  // 获取统计数据
+  if (request.action === 'getStats') {
+    handleGetStats().then(sendResponse);
+    return true;
+  }
+
   // 重新扫描页面（来自popup）
   if (request.action === 'rescan') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -396,6 +651,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     });
     return true;
+  }
+
+  // 获取当前系统主题
+  if (request.action === 'getCurrentSystemTheme') {
+    // 由于service worker无法直接检测系统主题，返回默认值
+    // 实际检测在content script中进行
+    sendResponse({ theme: 'light' });
+    return true;
+  }
+
+  // 获取当前主题
+  if (request.action === 'getCurrentTheme') {
+    getCurrentTheme().then(theme => {
+      sendResponse({ theme: theme });
+    });
+    return true;
+  }
+
+  // 更新主题配置
+  if (request.action === 'updateThemeConfig') {
+    updateThemeConfig(request.config).then(result => {
+      sendResponse(result);
+    });
+    return true;
+  }
+
+  // 主题变更广播
+  if (request.action === 'themeChanged') {
+    // 仅用于内部广播，不需要响应
+    return false;
   }
 
   sendResponse({ success: false, error: '未知操作' });

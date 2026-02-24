@@ -10,6 +10,7 @@ class ResultCard {
         this.isVisible = false;
         this.currentResult = null;
         this.currentType = null;
+        this.currentTheme = 'light'; // 当前主题
         
         // 拖动相关状态
         this.isDragging = false;
@@ -28,6 +29,12 @@ class ResultCard {
         this.minWidth = 400;
         this.minHeight = 300;
         
+        // 初始化主题
+        this.initTheme();
+        
+        // 设置主题监听器
+        this.setupThemeListener();
+
         // 类型配置
         this.typeConfig = {
             factCheck: {
@@ -49,7 +56,7 @@ class ResultCard {
                 gradient: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)'
             }
         };
-        
+
         this.init();
         this.escHandler = this.handleEsc.bind(this);
         this.startDrag = this.startDrag.bind(this);
@@ -58,6 +65,99 @@ class ResultCard {
         this.startResize = this.startResize.bind(this);
         this.onResize = this.onResize.bind(this);
         this.endResize = this.endResize.bind(this);
+    }
+    
+    /**
+     * 初始化主题
+     */
+    initTheme() {
+        this.currentTheme = 'light';
+        
+        // 检查页面是否有暗色主题类
+        if (document.documentElement.classList.contains('yz-dark-theme')) {
+            this.currentTheme = 'dark';
+        }
+    }
+    
+    /**
+     * 设置主题监听器
+     */
+    setupThemeListener() {
+        // 监听来自content script的主题变更消息
+        window.addEventListener('message', (event) => {
+            if (event.source !== window) return;
+            
+            if (event.data.type === 'YANZHI_YOULI_THEME_CHANGED') {
+                this.setTheme(event.data.theme);
+            }
+            // 新增：监听LLM响应消息
+            else if (event.data.type === 'YANZHI_YOULI_LLM_RESPONSE') {
+                console.log('[ResultCard] 收到LLM响应:', event.data);
+                if (event.data.success && event.data.result) {
+                    // 使用 showLoading 来显示卡片框架
+                    this.showLoading(event.data.action);
+                    // 手动更新结果为实际内容
+                    if (this.resultEl) {
+                        this.resultEl.innerHTML = this.formatResult(event.data.result, event.data.action);
+                    }
+                    // 关键：隐藏加载指示器，显示结果区域
+                    if (this.loadingEl) this.loadingEl.style.display = 'none';
+                    if (this.resultEl) this.resultEl.style.display = 'block';
+                } else {
+                    this.showError(event.data.error || '处理失败');
+                }
+            }
+        });
+        
+        // 监听来自扩展API的消息（主题变更和LLM响应）
+        if (chrome.runtime && chrome.runtime.onMessage) {
+            chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+                if (request.action === 'themeChanged') {
+                    this.setTheme(request.theme);
+                    sendResponse({ success: true });
+                    return true;
+                }
+                // 新增：监听LLM响应
+                else if (request.action === 'llmResponse') {
+                    console.log('[ResultCard] 收到LLM响应:', request);
+                    if (request.success && request.result) {
+                        // 使用 showLoading 来显示卡片框架
+                        this.showLoading(request.action);
+                        // 手动更新结果为实际内容
+                        if (this.resultEl) {
+                            this.resultEl.innerHTML = this.formatResult(request.result, request.action);
+                        }
+                        // 关键：隐藏加载指示器，显示结果区域
+                        if (this.loadingEl) this.loadingEl.style.display = 'none';
+                        if (this.resultEl) this.resultEl.style.display = 'block';
+                    } else {
+                        this.showError(request.error || '处理失败');
+                    }
+                    sendResponse({ success: true });
+                    return true;
+                }
+            });
+        }
+    }
+    
+    /**
+     * 设置主题
+     * @param {string} theme - 主题模式 ('light' | 'dark')
+     */
+    setTheme(theme) {
+        if (this.currentTheme === theme) return;
+        
+        this.currentTheme = theme;
+        
+        if (!this.card) return;
+        
+        if (theme === 'dark') {
+            this.card.classList.add('yz-result-card-dark');
+        } else {
+            this.card.classList.remove('yz-result-card-dark');
+        }
+        
+        console.log('🎨 结果卡片主题已切换:', theme);
     }
 
     /**

@@ -244,6 +244,106 @@ input:checked + .slider:before {
     font-size: 14px;
 }
 
+/* 详细统计 */
+.detailed-stats {
+    padding: 0 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.detailed-stats .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.stat-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    background: #f0f2f5;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.stat-card-icon {
+    font-size: 20px;
+    width: 32px;
+    height: 32px;
+    background: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.stat-card-content {
+    flex: 1;
+}
+
+.stat-card-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #667eea;
+    line-height: 1.2;
+}
+
+.stat-card-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 主题控制 */
+.theme-controls {
+    margin-bottom: 8px;
+}
+
+.theme-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    color: #333;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.theme-select:hover {
+    border-color: #667eea;
+}
+
+.theme-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
 /* 底部 */
 .popup-footer {
     padding: 12px 20px;
