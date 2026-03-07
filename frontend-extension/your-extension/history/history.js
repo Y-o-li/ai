@@ -296,8 +296,17 @@ function bindEvents() {
     // 导出选中
     document.getElementById('exportSelectedBtn').addEventListener('click', () => exportHistory(true));
     
-    // 清空
+    // 删除选中
+    document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelected);
+    
+    // 清空全部
     document.getElementById('clearBtn').addEventListener('click', clearHistory);
+    
+    // 全选
+    document.getElementById('selectAllBtn').addEventListener('click', selectAll);
+    
+    // 取消全选
+    document.getElementById('deselectAllBtn').addEventListener('click', deselectAll);
     
     // 弹窗关闭
     document.querySelector('.close-btn').addEventListener('click', () => {
@@ -467,6 +476,7 @@ function toggleSelectMode() {
     selectMode = !selectMode;
     const btn = document.getElementById('selectModeBtn');
     const exportSelectedBtn = document.getElementById('exportSelectedBtn');
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
     const selectedCountEl = document.getElementById('selectedCount');
     
     if (selectMode) {
@@ -474,12 +484,14 @@ function toggleSelectMode() {
         btn.classList.add('btn-primary');
         btn.classList.remove('btn-secondary');
         exportSelectedBtn.style.display = 'inline-block';
+        deleteSelectedBtn.style.display = 'inline-block';
         selectedCountEl.style.display = 'inline';
     } else {
         btn.textContent = '☑️ 选择模式';
         btn.classList.remove('btn-primary');
         btn.classList.add('btn-secondary');
         exportSelectedBtn.style.display = 'none';
+        deleteSelectedBtn.style.display = 'none';
         selectedCountEl.style.display = 'none';
         selectedRecords.clear();
     }
@@ -519,12 +531,74 @@ function updateSelectedCount() {
 }
 
 /**
+ * 全选当前显示的记录
+ */
+function selectAll() {
+    const filtered = filterRecords(allRecords);
+    filtered.forEach(record => {
+        selectedRecords.add(record.id);
+    });
+    renderRecords();
+    updateSelectedCount();
+}
+
+/**
+ * 取消全选
+ */
+function deselectAll() {
+    selectedRecords.clear();
+    renderRecords();
+    updateSelectedCount();
+}
+
+/**
+ * 删除选中的记录
+ */
+async function deleteSelected() {
+    if (selectedRecords.size === 0) {
+        alert('请先选择要删除的记录');
+        return;
+    }
+    
+    const count = selectedRecords.size;
+    if (!confirm(`确定删除选中的 ${count} 条记录吗？此操作不可恢复。`)) {
+        return;
+    }
+    
+    try {
+        // 批量删除
+        for (const id of selectedRecords) {
+            await window.historyManager.delete(id);
+        }
+        
+        // 清空选中集合
+        selectedRecords.clear();
+        
+        // 重新加载记录
+        await loadRecords();
+        
+        alert(`成功删除 ${count} 条记录`);
+    } catch (error) {
+        console.error('批量删除失败:', error);
+        alert('删除失败: ' + error.message);
+    }
+}
+
+/**
  * 清空历史记录
  */
 async function clearHistory() {
     if (!confirm('确定清空所有历史记录吗？此操作不可恢复。')) return;
-    await window.historyManager.clear();
-    await loadRecords();
+    
+    try {
+        await window.historyManager.clear();
+        selectedRecords.clear();
+        await loadRecords();
+        alert('已清空所有历史记录');
+    } catch (error) {
+        console.error('清空历史记录失败:', error);
+        alert('清空失败: ' + error.message);
+    }
 }
 
 /**
