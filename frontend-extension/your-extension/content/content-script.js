@@ -16,8 +16,8 @@
 
     console.log('🎯 言之有理插件内容脚本已加载');
     
-    // 初始化主题
-    initTheme().then(() => {
+    // 初始化主题（仅用于插件 UI 组件）
+    initPluginTheme().then(() => {
         // 主题初始化完成后，加载并发送配置
         return getConfig();
     }).then(config => {
@@ -28,7 +28,7 @@
     // 监听来自扩展的消息
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === 'themeChanged') {
-            applyThemeToPage(request.theme);
+            applyPluginTheme(request.theme);
             sendResponse({ success: true });
             return true;
         }
@@ -43,7 +43,7 @@
         if (event.source !== window) return;
         
         if (event.data.type === 'YANZHI_YOULI_THEME_CHANGED') {
-            applyThemeToPage(event.data.theme);
+            applyPluginTheme(event.data.theme);
         }
         // 处理配置获取请求
         else if (event.data.type === 'YANZHI_YOULI_GET_CONFIG') {
@@ -60,23 +60,23 @@
     });
     
     /**
-     * 初始化主题
+     * 初始化插件主题（仅作用于插件 UI 组件）
      */
-    async function initTheme() {
+    async function initPluginTheme() {
         try {
             // 获取当前主题
             const theme = await getCurrentTheme();
-            applyThemeToPage(theme);
+            applyPluginTheme(theme);
             
             // 开始监听系统主题变化
             watchSystemTheme();
             
-            console.log('🎨 主题初始化完成:', theme);
+            console.log('🎨 插件主题初始化完成:', theme);
             return theme;
         } catch (error) {
-            console.error('主题初始化失败:', error);
+            console.error('插件主题初始化失败:', error);
             const fallbackTheme = detectSystemTheme();
-            applyThemeToPage(fallbackTheme);
+            applyPluginTheme(fallbackTheme);
             return fallbackTheme;
         }
     }
@@ -210,20 +210,13 @@ function notifyConfigChange(config) {
 }
 
 /**
- * 应用主题到页面
+ * 应用主题到插件 UI 组件（不影响页面背景）
  * @param {string} theme - 主题模式
  */
-function applyThemeToPage(theme) {
+function applyPluginTheme(theme) {
     currentTheme = theme;
     
-    // 添加或移除暗色模式类
-    if (theme === 'dark') {
-        document.documentElement.classList.add('yz-dark-theme');
-    } else {
-        document.documentElement.classList.remove('yz-dark-theme');
-    }
-    
-    // 通知工具栏和结果卡片
+    // 仅通知工具栏和结果卡片，不修改页面背景
     if (window.floatingToolbar) {
         window.floatingToolbar.setTheme(theme);
     }
@@ -231,6 +224,17 @@ function applyThemeToPage(theme) {
     if (window.resultCard) {
         window.resultCard.setTheme(theme);
     }
+    
+    console.log('🎨 插件 UI 主题已切换:', theme);
+}
+
+/**
+ * 应用主题到页面（保留用于向后兼容，但不再使用）
+ * @deprecated 请使用 applyPluginTheme 代替
+ */
+function applyThemeToPage(theme) {
+    // 保留此函数以兼容旧代码，但不再实际修改页面背景
+    applyPluginTheme(theme);
 }
 
     // 加载外部脚本

@@ -197,7 +197,7 @@ async function updateThemeConfig(themeConfig) {
             console.log('[Popup] 立即更新UI显示为:', displayValue);
         }
         
-        // 4. 立即通知当前标签页（最重要的步骤）
+        // 4. 立即通知当前标签页（仅影响插件 UI 组件）
         await notifyCurrentTabImmediate(themeConfig.mode || 'light');
         
         // 5. 后台同步UI显示（作为保险）
@@ -216,7 +216,7 @@ async function updateThemeConfig(themeConfig) {
 }
 
 /**
- * 立即通知当前标签页主题变更
+ * 立即通知当前标签页主题变更（仅影响插件 UI 组件）
  */
 async function notifyCurrentTabImmediate(theme) {
     try {
@@ -229,54 +229,32 @@ async function notifyCurrentTabImmediate(theme) {
         
         console.log('[Popup] 立即通知标签页:', tab.id, theme);
         
-        // 直接在页面中执行主题切换
-        await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: (targetTheme) => {
-                // 页面中的主题切换逻辑
-                console.log('🎯 页面中执行主题切换:', targetTheme);
-                
-                // 应用主题
-                if (targetTheme === 'dark') {
-                    document.documentElement.classList.add('yz-dark-theme');
-                    document.body.style.backgroundColor = '#1e1e1e';
-                    document.body.style.color = '#e0e0e0';
-                } else {
-                    document.documentElement.classList.remove('yz-dark-theme');
-                    document.body.style.backgroundColor = '#ffffff';
-                    document.body.style.color = '#000000';
-                }
-                
-                document.body.style.transition = 'all 0.3s ease';
-                
-                // 视觉反馈
-                const indicator = document.createElement('div');
-                indicator.style.cssText = `
-                    position: fixed;
-                    top: 300px;
-                    right: 20px;
-                    padding: 15px 25px;
-                    background: ${targetTheme === 'dark' ? '#4a5568' : '#667eea'};
-                    color: white;
-                    border-radius: 8px;
-                    z-index: 999999;
-                    font-weight: bold;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-                `;
-                indicator.textContent = `✅ 主题已切换为${targetTheme === 'dark' ? '暗色' : '浅色'}模式`;
-                document.body.appendChild(indicator);
-                
-                setTimeout(() => {
-                    indicator.style.opacity = '0';
-                    indicator.style.transition = 'opacity 0.5s';
-                    setTimeout(() => indicator.remove(), 500);
-                }, 2000);
-                
-            },
-            args: [theme]
-        });
-        
-        console.log('[Popup] ✅ 立即通知完成');
+        // 向 Content Script 发送消息，由它来通知插件 UI 组件
+        try {
+            await chrome.tabs.sendMessage(tab.id, {
+                action: 'themeChanged',
+                theme: theme
+            });
+            console.log('[Popup] ✅ 已通知 Content Script');
+        } catch (error) {
+            console.error('[Popup] Content Script 通信失败:', error.message);
+            // 如果 Content Script 不存在，直接注入脚本到插件 UI 组件
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: (targetTheme) => {
+                    // 仅通知工具栏和结果卡片
+                    if (window.floatingToolbar) {
+                        window.floatingToolbar.setTheme(targetTheme);
+                    }
+                    if (window.resultCard) {
+                        window.resultCard.setTheme(targetTheme);
+                    }
+                    console.log('🎨 插件 UI 主题已切换:', targetTheme);
+                },
+                args: [theme]
+            });
+            console.log('[Popup] ✅ 已直接注入脚本到插件 UI');
+        }
         
     } catch (error) {
         console.error('[Popup] 立即通知失败:', error);

@@ -140,38 +140,26 @@ async function broadcastThemeChange() {
       } catch (error) {
         console.log(`[Background] 通知标签页 ${tab.id} 失败:`, error.message);
         
-        // 兜底方案：直接执行脚本
+        // 兜底方案：直接执行脚本（仅影响插件 UI 组件）
         if (tab.url?.startsWith('http')) {
           try {
             await chrome.scripting.executeScript({
               target: { tabId: tab.id },
               func: (targetTheme) => {
                 console.log('[Injected] 执行注入脚本，主题:', targetTheme);
-                
-                // 应用主题
-                if (targetTheme === 'dark') {
-                  document.documentElement.classList.add('yz-dark-theme');
-                  document.body.style.backgroundColor = '#1e1e1e';
-                  document.body.style.color = '#e0e0e0';
-                } else {
-                  document.documentElement.classList.remove('yz-dark-theme');
-                  document.body.style.backgroundColor = '#ffffff';
-                  document.body.style.color = '#000000';
-                }
-                
-                document.body.style.transition = 'all 0.3s ease';
-                
-                // 通知组件
+                        
+                // 仅通知工具栏和结果卡片，不影响页面背景
                 if (window.floatingToolbar) {
                   window.floatingToolbar.setTheme(targetTheme);
                 }
                 if (window.resultCard) {
                   window.resultCard.setTheme(targetTheme);
                 }
+                console.log('🎨 插件 UI 主题已切换:', targetTheme);
               },
               args: [theme]
             });
-            console.log(`[Background] 注入脚本成功: ${tab.id}`);
+            console.log(`[Background] 注入脚本成功：${tab.id}`);
           } catch (injectError) {
             console.error(`[Background] 注入脚本失败 ${tab.id}:`, injectError.message);
           }

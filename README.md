@@ -1390,7 +1390,136 @@ setTimeout(ensureThemeSet, 500);
 
 ---
 
-**本次修复完善了主题切换功能的用户体验，确保了配置状态与UI显示的完全一致性。**
+**本次修复完善了主题切换功能的用户体验，确保了配置状态与 UI 显示的完全一致性。**
+
+---
+
+## 主题切换重构记录（2026-02-24）
+
+> 本次重构将主题切换的作用域从整个页面限制为仅影响插件自身的 UI 组件，确保不干扰网页原始内容。
+
+### 重构背景
+
+用户需求：
+- ✅ 主题切换只应用于插件自身 UI（Popup、工具栏、结果卡片、历史记录页）
+- ✅ 不影响网页原始内容的显示
+- ✅ 保持核心功能（高亮、文本选择、LLM 调用）不受干扰
+
+### 重构范围
+
+#### 1. 核心文件修改
+
+| 文件 | 主要变更 | 影响 |
+|------|----------|------|
+| `content/content-script.js` | `applyThemeToPage()` → `applyPluginTheme()` | 仅通知插件 UI 组件 |
+| `popup/popup.js` | 优化通知逻辑 | 移除页面背景修改 |
+| `background/service-worker.js` | 精简兜底方案 | 只注入到插件 UI |
+
+#### 2. 关键代码变更
+
+**之前（影响整个页面）**:
+```javascript
+function applyThemeToPage(theme) {
+    if (theme === 'dark') {
+        document.documentElement.classList.add('yz-dark-theme');
+        document.body.style.backgroundColor = '#1e1e1e';
+        document.body.style.color = '#e0e0e0';
+    } else {
+        document.documentElement.classList.remove('yz-dark-theme');
+        document.body.style.backgroundColor = '#ffffff';
+        document.body.style.color = '#000000';
+    }
+}
+```
+
+**现在（仅影响插件 UI）**:
+```javascript
+function applyPluginTheme(theme) {
+    // 仅通知工具栏和结果卡片，不修改页面背景
+    if (window.floatingToolbar) {
+        window.floatingToolbar.setTheme(theme);
+    }
+    if (window.resultCard) {
+        window.resultCard.setTheme(theme);
+    }
+    console.log('🎨 插件 UI 主题已切换:', theme);
+}
+```
+
+#### 3. 向后兼容
+
+保留旧函数作为别名，确保平滑过渡：
+```javascript
+/**
+ * @deprecated 请使用 applyPluginTheme 代替
+ */
+function applyThemeToPage(theme) {
+    applyPluginTheme(theme);
+}
+```
+
+### 重构验证
+
+**测试场景**:
+1. ✅ 在Popup 中切换主题
+2. ✅ 观察网页背景颜色是否变化
+3. ✅ 观察插件 UI 组件是否响应
+4. ✅ 刷新页面后状态是否保持
+
+**测试结果**:
+- ✅ 网页背景颜色保持不变
+- ✅ 插件 UI 组件正确响应主题切换
+- ✅ 主题状态持久化正常
+- ✅ 核心功能（高亮、选择、LLM）正常工作
+
+### 技术要点
+
+#### CSS 变量作用域控制
+```css
+/* 主题变量定义在 :root 中 */
+:root {
+  --yz-bg-primary: #ffffff;
+  --yz-text-primary: #212529;
+}
+
+/* 暗色主题类作用于特定组件 */
+.yz-toolbar-dark {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%) !important;
+}
+
+.yz-result-card-dark {
+    background: var(--yz-bg-secondary) !important;
+}
+```
+
+#### 消息传递优化
+```javascript
+// Popup → Content Script → UI Components
+chrome.tabs.sendMessage(tab.id, {
+    action: 'themeChanged',
+    theme: theme
+});
+
+// Content Script 接收并转发
+window.postMessage({
+    type: 'YANZHI_YOULI_THEME_CHANGED',
+    theme: theme
+}, '*');
+```
+
+### 重构收益
+
+**用户体验**:
+- 🎯 主题切换精准作用于目标组件
+- 🔒 不干扰用户浏览的网页内容
+- ⚡ 通信链路更加清晰可靠
+
+**开发维护**:
+- 📦 关注点分离，职责明确
+- 🛠️ 调试更加容易
+- 🧪 测试覆盖更加精准
+
+---
 
 ---
 
