@@ -43,6 +43,9 @@ function renderRecords() {
     // 筛选
     let filtered = filterRecords(allRecords);
     
+    // 更新显示的记录数量
+    document.getElementById('totalCount').textContent = filtered.length;
+    
     if (filtered.length === 0) {
         listEl.innerHTML = '<div class="empty-state">📭 暂无历史记录</div>';
         return;
