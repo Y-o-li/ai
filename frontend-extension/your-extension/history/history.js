@@ -9,6 +9,16 @@ let selectMode = false;
 let selectedRecords = new Set();
 
 /**
+ * 转义HTML特殊字符
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
  * 初始化页面
  */
 document.addEventListener('DOMContentLoaded', async () => {
@@ -88,10 +98,11 @@ function filterRecords(records) {
     // 按搜索词筛选
     if (currentSearch) {
         const searchLower = currentSearch.toLowerCase();
-        filtered = filtered.filter(r => 
-            r.originalText.toLowerCase().includes(searchLower) ||
-            r.result.toLowerCase().includes(searchLower)
-        );
+        filtered = filtered.filter(r => {
+            const fullOriginalText = r.originalTextFull || r.originalText || '';
+            return fullOriginalText.toLowerCase().includes(searchLower) ||
+                   (r.result || '').toLowerCase().includes(searchLower);
+        });
     }
     
     return filtered;
@@ -133,12 +144,19 @@ function renderRecordItem(record) {
     const favoriteClass = record.isFavorite ? 'active' : '';
     const favoriteIcon = record.isFavorite ? '⭐' : '☆';
     const favoriteTitle = record.isFavorite ? '取消收藏' : '收藏';
-    const originalPreview = record.originalText.length > 100 
-        ? record.originalText.substring(0, 100) + '...' 
-        : record.originalText;
+    
+    // 使用完整原文或截断的原文
+    const fullOriginalText = record.originalTextFull || record.originalText || '';
+    const originalPreview = fullOriginalText.length > 100 
+        ? fullOriginalText.substring(0, 100) + '...' 
+        : fullOriginalText;
+    
     const resultPreview = record.result.length > 150 
         ? record.result.substring(0, 150) + '...' 
         : record.result;
+    
+    // 正确计算字符数
+    const actualLength = fullOriginalText.length;
     
     const isSelected = selectedRecords.has(record.id);
     const selectedClass = isSelected ? 'selected' : '';
@@ -155,10 +173,10 @@ function renderRecordItem(record) {
                     <span class="history-type ${typeClass}">${record.typeName}</span>
                     <span class="history-date">${new Date(record.timestamp).toLocaleTimeString()}</span>
                 </div>
-                <div class="history-original" title="${record.originalText}">${originalPreview}</div>
-                <div class="history-result-preview">${resultPreview}</div>
+                <div class="history-original" title="${escapeHtml(fullOriginalText)}">${escapeHtml(originalPreview)}</div>
+                <div class="history-result-preview">${escapeHtml(resultPreview)}</div>
                 <div class="history-footer">
-                    <span class="history-length">${record.length} 字符</span>
+                    <span class="history-length">${actualLength} 字符</span>
                     <div class="history-actions">
                         <button class="favorite ${favoriteClass}" title="${favoriteTitle}">${favoriteIcon}</button>
                         <button class="view" title="查看详情">👁️</button>
@@ -231,8 +249,11 @@ async function showDetail(id) {
     const record = allRecords.find(r => r.id === id);
     if (!record) return;
     
+    // 使用完整原文
+    const fullOriginalText = record.originalTextFull || record.originalText || '';
+    
     document.getElementById('modalTitle').textContent = record.typeName;
-    document.getElementById('modalOriginal').textContent = record.originalText;
+    document.getElementById('modalOriginal').textContent = fullOriginalText;
     document.getElementById('modalResult').innerHTML = formatResult(record.result);
     
     // 存储当前记录ID供按钮使用
@@ -255,9 +276,191 @@ function formatResult(text) {
 /**
  * 重新分析记录
  */
-function reuseRecord(id) {
-    // TODO: 在content-script中实现重新分析功能
-    alert('此功能即将实现');
+async function reuseRecord(id) {
+    const record = allRecords.find(r => r.id === id);
+    if (!record) return;
+    
+    // 显示重新分析选项弹窗
+    showReanalyzeModal(record);
+}
+
+/**
+ * 显示重新分析选项弹窗
+ */
+function showReanalyzeModal(record) {
+    const modal = document.createElement('div');
+    modal.className = 'modal show';
+    modal.id = 'reanalyzeModal';
+    
+    const fullOriginalText = record.originalTextFull || record.originalText || '';
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>🔄 重新分析</h2>
+                <button class="close-btn" onclick="closeReanalyzeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: bold; margin-bottom: 8px;">原文预览:</div>
+                    <div style="background: #f5f5f5; padding: 12px; border-radius: 4px; max-height: 150px; overflow-y: auto; font-size: 14px;">
+                        ${escapeHtml(fullOriginalText.substring(0, 200))}${fullOriginalText.length > 200 ? '...' : ''}
+                    </div>
+                    <div style="color: #666; font-size: 12px; margin-top: 4px;">
+                        共 ${fullOriginalText.length} 字符
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: bold; margin-bottom: 12px; color: #333;">选择分析类型:</div>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <button class="reanalyze-option" data-type="factCheck" style="padding: 16px; border: 2px solid #4CAF50; background: #f1f8f4; border-radius: 12px; cursor: pointer; text-align: left; transition: all 0.2s; position: relative; overflow: hidden;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; background: #4CAF50; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; color: white;">✓</div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; color: #2d7a3e; font-size: 15px; margin-bottom: 4px;">事实核查</div>
+                                    <div style="font-size: 12px; color: #555; line-height: 1.4;">验证文本中的事实准确性和可信度</div>
+                                </div>
+                            </div>
+                        </button>
+                        
+                        <button class="reanalyze-option" data-type="summarize" style="padding: 16px; border: 2px solid #2196F3; background: #f0f7ff; border-radius: 12px; cursor: pointer; text-align: left; transition: all 0.2s; position: relative; overflow: hidden;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; background: #2196F3; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; color: white;">☰</div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; color: #1565c0; font-size: 15px; margin-bottom: 4px;">语义总结</div>
+                                    <div style="font-size: 12px; color: #555; line-height: 1.4;">提取核心观点和关键要点</div>
+                                </div>
+                            </div>
+                        </button>
+                        
+                        <button class="reanalyze-option" data-type="neutralize" style="padding: 16px; border: 2px solid #FF9800; background: #fff8f0; border-radius: 12px; cursor: pointer; text-align: left; transition: all 0.2s; position: relative; overflow: hidden;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; background: #FF9800; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; color: white;">◐</div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; color: #e65100; font-size: 15px; margin-bottom: 4px;">中性化改写</div>
+                                    <div style="font-size: 12px; color: #555; line-height: 1.4;">去除情绪化表达，改写为客观中性的文本</div>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="reanalyzeStatus" style="display: none; padding: 12px; background: #e3f2fd; border-radius: 4px; margin-top: 15px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="spinner" style="width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #2196F3; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                        <span>正在分析中，请稍候...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 添加样式
+    if (!document.getElementById('reanalyze-styles')) {
+        const style = document.createElement('style');
+        style.id = 'reanalyze-styles';
+        style.textContent = `
+            .reanalyze-option:hover {
+                border-color: #667eea !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+                transform: translateY(-2px);
+            }
+            .reanalyze-option:active {
+                transform: translateY(0);
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // 绑定选项点击事件
+    modal.querySelectorAll('.reanalyze-option').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const type = btn.dataset.type;
+            await performReanalyze(record, type);
+        });
+    });
+    
+    // 绑定关闭事件
+    modal.querySelector('.close-btn').addEventListener('click', closeReanalyzeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeReanalyzeModal();
+        }
+    });
+}
+
+/**
+ * 关闭重新分析弹窗
+ */
+function closeReanalyzeModal() {
+    const modal = document.getElementById('reanalyzeModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+/**
+ * 执行重新分析
+ */
+async function performReanalyze(record, type) {
+    const statusEl = document.getElementById('reanalyzeStatus');
+    const optionBtns = document.querySelectorAll('.reanalyze-option');
+    
+    try {
+        // 显示加载状态
+        statusEl.style.display = 'block';
+        optionBtns.forEach(btn => btn.disabled = true);
+        
+        const fullOriginalText = record.originalTextFull || record.originalText || '';
+        
+        // 发送LLM请求
+        const response = await chrome.runtime.sendMessage({
+            action: 'llmProcess',
+            type: type,
+            text: fullOriginalText
+        });
+        
+        if (response && response.success) {
+            // 成功
+            statusEl.innerHTML = `
+                <div style="color: #4CAF50; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">✓</span>
+                    <span>分析完成！新记录已保存到历史记录。</span>
+                </div>
+            `;
+            
+            // 2秒后关闭弹窗并刷新列表
+            setTimeout(async () => {
+                closeReanalyzeModal();
+                await loadRecords();
+            }, 2000);
+        } else {
+            // 失败
+            statusEl.innerHTML = `
+                <div style="color: #f44336; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">✕</span>
+                    <span>分析失败: ${response?.error || '未知错误'}</span>
+                </div>
+            `;
+            optionBtns.forEach(btn => btn.disabled = false);
+        }
+    } catch (error) {
+        console.error('重新分析失败:', error);
+        statusEl.innerHTML = `
+            <div style="color: #f44336; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 24px;">✕</span>
+                <span>分析失败: ${error.message}</span>
+            </div>
+        `;
+        optionBtns.forEach(btn => btn.disabled = false);
+    }
 }
 
 /**
@@ -321,6 +524,7 @@ function bindEvents() {
     
     // 弹窗内按钮
     document.getElementById('modalCopyBtn').addEventListener('click', copyResult);
+    document.getElementById('modalReuseBtn').addEventListener('click', reuseFromModal);
     document.getElementById('modalDeleteBtn').addEventListener('click', deleteFromModal);
 }
 
@@ -429,14 +633,16 @@ async function exportHistory(selectedOnly = false) {
 
         records.forEach((record, index) => {
             const timeText = new Date(record.timestamp).toLocaleString('zh-CN');
+            const fullOriginalText = record.originalTextFull || record.originalText || '';
+            
             printWindow.document.write(`
     <div class="record">
         <div class="record-header">
             <span class="record-type">${index + 1}. ${record.typeName || '未知类型'}</span>
             <span class="record-time">${timeText}</span>
         </div>
-        <div class="section-title">原文:</div>
-        <div class="section-content">${escapeHtml(record.originalText || record.originalTextFull || '')}</div>
+        <div class="section-title">原文 (${fullOriginalText.length} 字符):</div>
+        <div class="section-content">${escapeHtml(fullOriginalText)}</div>
         <div class="section-title">结果:</div>
         <div class="section-content">${escapeHtml(record.result || '')}</div>
     </div>
@@ -458,15 +664,6 @@ async function exportHistory(selectedOnly = false) {
         console.error('导出PDF失败:', error);
         alert('导出失败: ' + error.message);
     }
-}
-
-/**
- * 转义HTML特殊字符
- */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
 
 /**
@@ -615,6 +812,21 @@ async function copyResult(e) {
     } catch (err) {
         console.error('复制失败:', err);
     }
+}
+
+/**
+ * 从弹窗重新分析
+ */
+function reuseFromModal(e) {
+    const id = e.target.dataset.id;
+    const record = allRecords.find(r => r.id === id);
+    if (!record) return;
+    
+    // 关闭详情弹窗
+    document.getElementById('detailModal').classList.remove('show');
+    
+    // 显示重新分析弹窗
+    showReanalyzeModal(record);
 }
 
 /**

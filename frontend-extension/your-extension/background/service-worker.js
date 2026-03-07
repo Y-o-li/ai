@@ -487,7 +487,14 @@ async function handleLLMRequest(request) {
     const result = await llmProcessor.process(request.type, request.text);
 
     // 更新统计
-    await updateStats(request.type, request.text, result.result || '');
+    await updateStats(request.type, request.text, result || '');
+
+    // 自动保存到历史记录
+    await handleHistoryAdd({
+      type: request.type,
+      originalText: request.text,
+      result: result
+    });
 
     return { success: true, result };
   } catch (error) {

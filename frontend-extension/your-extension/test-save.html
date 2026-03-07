@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试历史记录保存</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 历史记录保存测试</h1>
+    
+    <div class="test-section">
+        <h2>步骤 1: 检查 Service Worker</h2>
+        <button onclick="checkServiceWorker()">检查 Service Worker</button>
+        <div id="sw-log" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>步骤 2: 测试直接保存历史记录</h2>
+        <button onclick="testDirectSave()">直接保存测试记录</button>
+        <div id="save-log" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>步骤 3: 测试 LLM 请求（模拟）</h2>
+        <button onclick="testLLMRequest()">发送模拟 LLM 请求</button>
+        <div id="llm-log" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>步骤 4: 查看存储的历史记录</h2>
+        <button onclick="viewHistory()">查看历史记录</button>
+        <button onclick="clearHistory()">清空历史记录</button>
+        <div id="history-log" class="log"></div>
+    </div>
+
+    <script>
+        function log(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = isError ? 'error' : 'success';
+            element.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+        }
+
+        async function checkServiceWorker() {
+            const logId = 'sw-log';
+            document.getElementById(logId).innerHTML = '';
+            
+            try {
+                log(logId, '正在检查 Service Worker...');
+                
+                const response = await chrome.runtime.sendMessage({ action: 'getConfig' });
+                
+                if (response && response.success) {
+                    log(logId, '✅ Service Worker 正常运行');
+                    log(logId, `配置: ${JSON.stringify(response.config, null, 2)}`);
+                } else {
+                    log(logId, '❌ Service Worker 响应异常', true);
+                }
+            } catch (error) {
+                log(logId, `❌ 错误: ${error.message}`, true);
+            }
+        }
+
+        async function testDirectSave() {
+            const logId = 'save-log';
+            document.getElementById(logId).innerHTML = '';
+            
+            try {
+                log(logId, '正在直接保存测试记录...');
+                
+                const testRecord = {
+                    type: 'summarize',
+                    originalText: '这是一个测试文本，用于验证历史记录保存功能是否正常工作。',
+                    result: '测试结果：历史记录保存功能测试。'
+                };
+                
+                const response = await chrome.runtime.sendMessage({
+                    action: 'historyAdd',
+                    ...testRecord
+                });
+                
+                if (response && response.success) {
+                    log(logId, '✅ 保存成功！');
+                    log(logId, `记录ID: ${response.record.id}`);
+                    log(logId, `记录详情: ${JSON.stringify(response.record, null, 2)}`);
+                } else {
+                    log(logId, `❌ 保存失败: ${response?.error || '未知错误'}`, true);
+                }
+            } catch (error) {
+                log(logId, `❌ 错误: ${error.message}`, true);
+            }
+        }
+
+        async function testLLMRequest() {
+            const logId = 'llm-log';
+            document.getElementById(logId).innerHTML = '';
+            
+            try {
+                log(logId, '正在发送模拟 LLM 请求...');
+                log(logId, '注意：这需要配置有效的 API Key');
+                
+                const response = await chrome.runtime.sendMessage({
+                    action: 'llmProcess',
+                    type: 'summarize',
+                    text: '这是一个测试文本，用于验证 LLM 处理和历史记录保存是否正常。'
+                });
+                
+                if (response && response.success) {
+                    log(logId, '✅ LLM 处理成功！');
+                    log(logId, `结果: ${response.result}`);
+                    log(logId, '现在检查历史记录是否已保存...');
+                    
+                    // 等待一下再查询
+                    setTimeout(async () => {
+                        const historyResponse = await chrome.runtime.sendMessage({
+                            action: 'historyGetAll'
+                        });
+                        
+                        if (historyResponse && historyResponse.success) {
+                            log(logId, `✅ 历史记录数量: ${historyResponse.records.length}`);
+                            if (historyResponse.records.length > 0) {
+                                log(logId, `最新记录: ${JSON.stringify(historyResponse.records[0], null, 2)}`);
+                            }
+                        }
+                    }, 500);
+                } else {
+                    log(logId, `❌ LLM 处理失败: ${response?.error || '未知错误'}`, true);
+                }
+            } catch (error) {
+                log(logId, `❌ 错误: ${error.message}`, true);
+            }
+        }
+
+        async function viewHistory() {
+            const logId = 'history-log';
+            document.getElementById(logId).innerHTML = '';
+            
+            try {
+                log(logId, '正在获取历史记录...');
+                
+                const response = await chrome.runtime.sendMessage({
+                    action: 'historyGetAll'
+                });
+                
+                if (response && response.success) {
+                    log(logId, `✅ 获取成功！共 ${response.records.length} 条记录`);
+                    
+                    if (response.records.length === 0) {
+                        log(logId, '⚠️ 没有历史记录');
+                    } else {
+                        response.records.forEach((record, index) => {
+                            log(logId, `\n记录 ${index + 1}:`);
+                            log(logId, `  ID: ${record.id}`);
+                            log(logId, `  类型: ${record.typeName}`);
+                            log(logId, `  时间: ${new Date(record.timestamp).toLocaleString()}`);
+                            log(logId, `  原文: ${record.originalText}`);
+                            log(logId, `  结果: ${record.result.substring(0, 100)}...`);
+                        });
+                    }
+                } else {
+                    log(logId, `❌ 获取失败: ${response?.error || '未知错误'}`, true);
+                }
+            } catch (error) {
+                log(logId, `❌ 错误: ${error.message}`, true);
+            }
+        }
+
+        async function clearHistory() {
+            const logId = 'history-log';
+            
+            if (!confirm('确定要清空所有历史记录吗？')) {
+                return;
+            }
+            
+            try {
+                log(logId, '正在清空历史记录...');
+                
+                const response = await chrome.runtime.sendMessage({
+                    action: 'historyClear'
+                });
+                
+                if (response && response.success) {
+                    log(logId, '✅ 清空成功！');
+                } else {
+                    log(logId, `❌ 清空失败: ${response?.error || '未知错误'}`, true);
+                }
+            } catch (error) {
+                log(logId, `❌ 错误: ${error.message}`, true);
+            }
+        }
+
+        // 页面加载时自动检查
+        window.addEventListener('load', () => {
+            checkServiceWorker();
+        });
+    </script>
+</body>
+</html>
+

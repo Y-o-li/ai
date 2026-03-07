@@ -461,3 +461,17 @@ body {
     background: #f8f9fa;
     border-top: 1px solid #e0e0e0;
 }
+
+/* 重新分析按钮特殊样式 */
+#modalReuseBtn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    font-weight: 500;
+}
+
+#modalReuseBtn:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}

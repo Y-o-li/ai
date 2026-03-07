@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试历史记录</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #667eea;
+        }
+        .section {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        pre {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 历史记录调试工具</h1>
+    
+    <div class="section">
+        <h2>1. 检查存储</h2>
+        <button onclick="checkStorage()">检查 Chrome Storage</button>
+        <button onclick="addTestRecord()">添加测试记录</button>
+        <button onclick="clearStorage()">清空存储</button>
+        <div id="storageResult"></div>
+    </div>
+    
+    <div class="section">
+        <h2>2. 历史记录数据</h2>
+        <button onclick="showAllRecords()">显示所有记录</button>
+        <button onclick="showRecordDetails()">显示详细信息</button>
+        <div id="recordsResult"></div>
+    </div>
+    
+    <div class="section">
+        <h2>3. 测试历史管理器</h2>
+        <button onclick="testHistoryManager()">测试 HistoryManager</button>
+        <div id="managerResult"></div>
+    </div>
+
+    <script>
+        // 检查存储
+        async function checkStorage() {
+            const result = document.getElementById('storageResult');
+            result.innerHTML = '<div class="status info">正在检查...</div>';
+            
+            try {
+                const data = await chrome.storage.local.get('yz_history');
+                const records = data.yz_history || [];
+                
+                result.innerHTML = `
+                    <div class="status success">
+                        ✓ 存储检查完成<br>
+                        记录数量: ${records.length}<br>
+                        存储键: yz_history
+                    </div>
+                    <pre>${JSON.stringify(records, null, 2)}</pre>
+                `;
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="status error">
+                        ✗ 检查失败: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 添加测试记录
+        async function addTestRecord() {
+            const result = document.getElementById('storageResult');
+            result.innerHTML = '<div class="status info">正在添加测试记录...</div>';
+            
+            try {
+                const data = await chrome.storage.local.get('yz_history');
+                const records = data.yz_history || [];
+                
+                const testRecord = {
+                    id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+                    timestamp: Date.now(),
+                    date: new Date().toISOString().split('T')[0],
+                    type: 'summarize',
+                    typeName: '语义总结',
+                    originalText: '这是一个测试文本的前200个字符...',
+                    originalTextFull: '这是一个测试文本，用于验证历史记录功能是否正常工作。这段文字会被完整保存到 originalTextFull 字段中。',
+                    result: '测试结果：历史记录功能正常工作。',
+                    length: 65,
+                    isFavorite: false
+                };
+                
+                records.unshift(testRecord);
+                await chrome.storage.local.set({ yz_history: records });
+                
+                result.innerHTML = `
+                    <div class="status success">
+                        ✓ 测试记录已添加<br>
+                        记录ID: ${testRecord.id}<br>
+                        当前总数: ${records.length}
+                    </div>
+                `;
+                
+                // 自动刷新显示
+                setTimeout(checkStorage, 500);
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="status error">
+                        ✗ 添加失败: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 清空存储
+        async function clearStorage() {
+            if (!confirm('确定要清空所有历史记录吗？')) return;
+            
+            const result = document.getElementById('storageResult');
+            result.innerHTML = '<div class="status info">正在清空...</div>';
+            
+            try {
+                await chrome.storage.local.remove('yz_history');
+                result.innerHTML = `
+                    <div class="status success">
+                        ✓ 存储已清空
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="status error">
+                        ✗ 清空失败: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 显示所有记录
+        async function showAllRecords() {
+            const result = document.getElementById('recordsResult');
+            result.innerHTML = '<div class="status info">正在加载...</div>';
+            
+            try {
+                const data = await chrome.storage.local.get('yz_history');
+                const records = data.yz_history || [];
+                
+                if (records.length === 0) {
+                    result.innerHTML = `
+                        <div class="status info">
+                            暂无历史记录
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = `<div class="status success">找到 ${records.length} 条记录</div>`;
+                html += '<div style="margin-top: 10px;">';
+                
+                records.forEach((record, index) => {
+                    const fullText = record.originalTextFull || record.originalText || '';
+                    html += `
+                        <div style="background: white; padding: 15px; margin: 10px 0; border-radius: 4px; border-left: 4px solid #667eea;">
+                            <strong>${index + 1}. ${record.typeName}</strong> 
+                            <span style="color: #999; font-size: 12px;">${new Date(record.timestamp).toLocaleString()}</span><br>
+                            <div style="margin-top: 8px;">
+                                <strong>原文 (${fullText.length} 字符):</strong><br>
+                                <div style="background: #f8f9fa; padding: 8px; margin-top: 4px; border-radius: 4px;">
+                                    ${fullText.substring(0, 200)}${fullText.length > 200 ? '...' : ''}
+                                </div>
+                            </div>
+                            <div style="margin-top: 8px;">
+                                <strong>结果:</strong><br>
+                                <div style="background: #f8f9fa; padding: 8px; margin-top: 4px; border-radius: 4px;">
+                                    ${record.result.substring(0, 200)}${record.result.length > 200 ? '...' : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                result.innerHTML = html;
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="status error">
+                        ✗ 加载失败: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 显示详细信息
+        async function showRecordDetails() {
+            const result = document.getElementById('recordsResult');
+            result.innerHTML = '<div class="status info">正在加载...</div>';
+            
+            try {
+                const data = await chrome.storage.local.get('yz_history');
+                const records = data.yz_history || [];
+                
+                result.innerHTML = `
+                    <div class="status success">
+                        记录详情
+                    </div>
+                    <pre>${JSON.stringify(records, null, 2)}</pre>
+                `;
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="status error">
+                        ✗ 加载失败: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 测试历史管理器
+        async function testHistoryManager() {
+            const result = document.getElementById('managerResult');
+            result.innerHTML = '<div class="status info">正在测试...</div>';
+            
+            let html = '<div class="status success">测试结果:</div><ul>';
+            
+            // 测试1: 检查 historyManager 是否存在
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                html += '<li>✓ Chrome Runtime API 可用</li>';
+            } else {
+                html += '<li>✗ Chrome Runtime API 不可用</li>';
+            }
+            
+            // 测试2: 发送消息到 background
+            try {
+                const response = await chrome.runtime.sendMessage({ action: 'historyGetAll' });
+                if (response.success) {
+                    html += `<li>✓ Background 通信正常，记录数: ${response.records.length}</li>`;
+                } else {
+                    html += `<li>✗ Background 返回错误: ${response.error}</li>`;
+                }
+            } catch (error) {
+                html += `<li>✗ Background 通信失败: ${error.message}</li>`;
+            }
+            
+            html += '</ul>';
+            result.innerHTML = html;
+        }
+        
+        // 页面加载时自动检查
+        window.addEventListener('load', () => {
+            checkStorage();
+        });
+    </script>
+</body>
+</html>
+
