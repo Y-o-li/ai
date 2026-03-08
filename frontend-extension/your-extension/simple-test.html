@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .yz-highlighted {
+            background-color: rgba(255, 82, 82, 0.3);
+            color: #c62828;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <h1>简单测试页面</h1>
+    
+    <p>测试语句 1：这个群体简直是社会的毒瘤，必须彻底消灭他们！我们绝对不能容忍这种败类存在，应该让所有人一起行动起来，把他们赶出去！这种恶劣行为必须受到严厉惩罚，绝不手软！</p>
+    
+    <p>测试语句 2：那些反对我们的人都是无知和愚蠢的，他们根本不配在这个社会立足！我们应该联合起来抵制他们的观点，让他们闭嘴！</p>
+    
+    <p>正常语句：今天天气很好，我打算去公园散步。希望明天也是个好天气，这样就可以和朋友一起去爬山了。</p>
+    
+    <script src="content/highlight.js"></script>
+    <script>
+        // 手动触发扫描
+        setTimeout(async () => {
+            console.log('=== 开始调试 ===');
+            
+            // 确保词库加载
+            if (!window.detector.isLoaded) {
+                console.log('词库未加载，开始加载...');
+                const loaded = await window.detector.loadWordList();
+                console.log('词库加载结果:', loaded);
+            }
+            
+            console.log('词库大小:', window.detector.wordList.length);
+            console.log('配置:', window.detector.config);
+            
+            // 测试检测功能
+            const testText1 = "这个群体简直是社会的毒瘤，必须彻底消灭他们！";
+            console.log('\n测试文本 1:', testText1);
+            const result1 = window.detector.detect(testText1);
+            console.log('检测结果 1:', result1);
+            
+            // 测试高亮功能
+            const pElements = document.querySelectorAll('p');
+            console.log('\n找到的段落数量:', pElements.length);
+            
+            pElements.forEach((p, index) => {
+                console.log('\n处理段落', index + 1);
+                console.log('文本内容:', p.textContent);
+                
+                // 直接对每个段落进行检测和高亮
+                const textNodes = [];
+                const walker = document.createTreeWalker(
+                    p,
+                    NodeFilter.SHOW_TEXT,
+                    null,
+                    false
+                );
+                
+                let node;
+                while (node = walker.nextNode()) {
+                    if (node.textContent.trim().length > 0) {
+                        textNodes.push(node);
+                    }
+                }
+                
+                console.log('找到的文本节点数量:', textNodes.length);
+                
+                textNodes.forEach((textNode, nodeIndex) => {
+                    console.log('处理文本节点', nodeIndex + 1);
+                    const result = window.detector.detect(textNode.textContent);
+                    console.log('检测结果:', result);
+                    
+                    if (result.isInciting) {
+                        console.log('触发高亮');
+                        window.detector.highlight(textNode, result);
+                    }
+                });
+            });
+            
+            console.log('=== 调试完成 ===');
+        }, 1000);
+    </script>
+</body>
+</html>

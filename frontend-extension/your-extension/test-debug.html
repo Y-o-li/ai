@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>敏感度调试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .test-case {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .expected-highlight {
+            background-color: #fff3f3;
+            border-left: 4px solid #ff4444;
+        }
+        .debug-info {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .yz-highlighted {
+            background-color: rgba(255, 82, 82, 0.3);
+            color: #c62828;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <h1>敏感度调试页面</h1>
+    <p>以下是需要触发高亮的测试语句：</p>
+    
+    <div class="test-case expected-highlight">
+        <strong>测试语句 1：</strong><br>
+        这个群体简直是社会的毒瘤，必须彻底消灭他们！我们绝对不能容忍这种败类存在，应该让所有人一起行动起来，把他们赶出去！这种恶劣行为必须受到严厉惩罚，绝不手软！
+    </div>
+    
+    <div class="test-case expected-highlight">
+        <strong>测试语句 2：</strong><br>
+        那些反对我们的人都是无知和愚蠢的，他们根本不配在这个社会立足！我们应该联合起来抵制他们的观点，让他们闭嘴！
+    </div>
+    
+    <div class="test-case">
+        <strong>正常语句（不应该高亮）：</strong><br>
+        今天天气很好，我打算去公园散步。希望明天也是个好天气，这样就可以和朋友一起去爬山了。
+    </div>
+    
+    <div id="debug-output" class="debug-info">
+        调试信息将显示在这里...
+    </div>
+    
+    <script src="content/highlight.js"></script>
+    <script>
+        // 增强调试信息
+        function addDebugInfo(message) {
+            const debugDiv = document.getElementById('debug-output');
+            debugDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            console.log(message);
+        }
+        
+        // 重写控制台日志，同时输出到页面
+        const originalLog = console.log;
+        console.log = function(...args) {
+            addDebugInfo(args.join(' '));
+            originalLog.apply(console, args);
+        };
+        
+        // 手动触发扫描并添加调试
+        setTimeout(async () => {
+            addDebugInfo('开始初始化检测器...');
+            
+            // 确保词库加载
+            if (!window.detector.isLoaded) {
+                addDebugInfo('词库未加载，开始加载...');
+                const loaded = await window.detector.loadWordList();
+                addDebugInfo('词库加载结果: ' + loaded);
+            } else {
+                addDebugInfo('词库已加载');
+            }
+            
+            addDebugInfo('词库大小: ' + window.detector.wordList.length);
+            addDebugInfo('配置: ' + JSON.stringify(window.detector.config));
+            
+            // 测试检测功能
+            const testText1 = "这个群体简直是社会的毒瘤，必须彻底消灭他们！";
+            const testText2 = "那些反对我们的人都是无知和愚蠢的";
+            const testText3 = "今天天气很好";
+            
+            addDebugInfo('\n测试检测功能:');
+            addDebugInfo('测试文本 1: ' + testText1);
+            const result1 = window.detector.detect(testText1);
+            addDebugInfo('检测结果 1: ' + JSON.stringify(result1));
+            
+            addDebugInfo('测试文本 2: ' + testText2);
+            const result2 = window.detector.detect(testText2);
+            addDebugInfo('检测结果 2: ' + JSON.stringify(result2));
+            
+            addDebugInfo('测试文本 3: ' + testText3);
+            const result3 = window.detector.detect(testText3);
+            addDebugInfo('检测结果 3: ' + JSON.stringify(result3));
+            
+            addDebugInfo('\n开始扫描页面...');
+            await scanAndHighlight();
+            addDebugInfo('扫描完成');
+        }, 500);
+    </script>
+</body>
+</html>

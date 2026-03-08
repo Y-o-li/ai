@@ -78,7 +78,7 @@
 /* 煽动性文本高亮样式 */
 .yz-highlighted,
 .inciting-text {
-    border-radius: 3px;
+    border-radius: 12px;
     padding: 0 2px;
     transition: all 0.2s ease;
     cursor: help;
@@ -111,11 +111,11 @@
 }
 
 /* 结果卡片样式 */
-#yz-result-card {
+.yz-result-card {
     position: fixed !important;
     background: var(--yz-bg-primary) !important;
     border: 1px solid var(--yz-border-color) !important;
-    border-radius: 16px !important;
+    border-radius: 12px !important;
     box-shadow: 0 25px 50px -12px var(--yz-shadow-heavy) !important;
     z-index: 2147483646 !important;
     flex-direction: column !important;
@@ -124,15 +124,16 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif !important;
 }
 
-#yz-result-content {
+.yz-result-content {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif !important;
+    color: #000 !important;
 }
 
-#yz-result-content strong {
+.yz-result-content strong {
     font-weight: 600 !important;
 }
 
-#yz-result-content code {
+.yz-result-content code {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
 }
 
@@ -181,7 +182,7 @@
 }
 
 .yz-result-card-dark .yz-result-content {
-    color: var(--yz-text-secondary) !important;
+    color: var(--yz-text-primary) !important;
 }
 
 .yz-result-card-dark .yz-result-content h3 {
@@ -282,7 +283,7 @@
 #yz-result-card {
     position: fixed !important;
     background: #fff !important;
-    border-radius: 16px !important;
+    border-radius: 12px !important;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
     z-index: 2147483646 !important;
     flex-direction: column !important;

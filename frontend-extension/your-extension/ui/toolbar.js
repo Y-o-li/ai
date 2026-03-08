@@ -48,7 +48,7 @@ class FloatingToolbar {
             },
             {
                 id: 'yz-history',
-                icon: '📚',
+                icon: 'Ⓗ',
                 label: '历史记录',
                 action: 'openHistory',
                 color: '#9C27B0'
@@ -144,6 +144,33 @@ class FloatingToolbar {
             else if (event.data.type === 'YANZHI_YOULI_CONFIG') {
                 console.log('[Toolbar] 收到配置变更消息', event.data.config);
                 this.updateConfigFromMessage(event.data.config);
+            }
+            // 新增：监听LLM响应消息
+            else if (event.data.type === 'YANZHI_YOULI_LLM_RESPONSE') {
+                console.log('[Toolbar] 收到LLM响应:', event.data);
+                if (event.data.success && event.data.result) {
+                    // 如果有cardId，更新现有的加载卡片
+                    if (event.data.cardId && window.resultCardManager) {
+                        // 找到对应的卡片并更新
+                        const card = window.resultCardManager.getCardById(event.data.cardId);
+                        if (card) {
+                            // 更新卡片内容
+                            card.currentResult = event.data.result;
+                            card.currentType = event.data.action;
+                            if (card.resultEl) {
+                                card.resultEl.innerHTML = card.formatResult(event.data.result, event.data.action);
+                            }
+                            // 隐藏加载，显示结果
+                            if (card.loadingEl) card.loadingEl.style.display = 'none';
+                            if (card.resultEl) card.resultEl.style.display = 'block';
+                        }
+                    } else if (window.resultCardManager) {
+                        // 如果没有cardId，创建新的结果卡片
+                        window.resultCardManager.createCard(event.data.result, event.data.action);
+                    } else if (window.resultCard) {
+                        window.resultCard.show(event.data.result, event.data.action);
+                    }
+                }
             }
         });
         
@@ -555,17 +582,7 @@ class FloatingToolbar {
                     this.hideTooltip();
                 });
 
-                // 点击事件（拖动时不触发）
-                button.addEventListener('click', (e) => {
-                    if (this.hasDragged) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        return;
-                    }
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.handleAction(btn.action);
-                });
+                // 点击事件已在createButton方法中添加，这里不再重复添加
             }
         });
 
@@ -1046,8 +1063,11 @@ class FloatingToolbar {
 
         console.log('[Toolbar] 发送处理请求:', action, this.currentSelection.substring(0, 50) + '...');
         
-        // 【添加】显示加载状态
-        if (window.resultCard) {
+        // 【添加】显示加载状态，使用resultCardManager创建新的卡片
+        let loadingCard = null;
+        if (window.resultCardManager) {
+            loadingCard = window.resultCardManager.createLoadingCard(action);
+        } else if (window.resultCard) {
             window.resultCard.showLoading(action);
         }
 
@@ -1055,8 +1075,12 @@ class FloatingToolbar {
         window.postMessage({
             type: 'YANZHI_YOULI_LLM_REQUEST',
             action: action,
-            text: this.currentSelection
+            text: this.currentSelection,
+            cardId: loadingCard ? loadingCard.id : null
         }, '*');
+        
+        // 保存加载卡片引用，以便在收到响应时更新
+        this.currentLoadingCard = loadingCard;
 
         // 执行后清空当前选择文本，但不隐藏工具栏（因为工具栏显示开关开启时，工具栏始终显示）
         this.currentSelection = '';
@@ -1068,20 +1092,8 @@ class FloatingToolbar {
     openHistoryPage() {
         console.log('[Toolbar] 准备打开历史记录页面');
         
-        // 方法1: 尝试直接使用 chrome.runtime (如果可用)
-        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
-            try {
-                const historyUrl = chrome.runtime.getURL('history/history.html');
-                console.log('[Toolbar] 使用 chrome.runtime.getURL:', historyUrl);
-                window.open(historyUrl, '_blank');
-                console.log('[Toolbar] 已直接打开历史记录页面');
-                return;
-            } catch (error) {
-                console.warn('[Toolbar] chrome.runtime 方法失败:', error);
-            }
-        }
-        
-        // 方法2: 通过 postMessage 请求 content-script 打开历史记录页面
+        // 直接使用 postMessage 请求 content-script 打开历史记录页面
+        // 这样可以避免重复打开窗口的问题
         console.log('[Toolbar] 使用 postMessage 方法');
         window.postMessage({
             type: 'YANZHI_YOULI_OPEN_HISTORY'

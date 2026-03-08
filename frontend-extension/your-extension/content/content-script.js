@@ -348,14 +348,15 @@ function applyThemeToPage(theme) {
             }, (response) => {
                 console.log('[Content Script] 收到background响应:', response);
 
-                // 将响应转发回toolbar
-                window.postMessage({
-                    type: 'YANZHI_YOULI_LLM_RESPONSE',
-                    success: response?.success,
-                    result: response?.result,
-                    error: response?.error,
-                    action: event.data.action
-                }, '*');
+                // 将响应转发回toolbar，由toolbar更新加载卡片
+            window.postMessage({
+                type: 'YANZHI_YOULI_LLM_RESPONSE',
+                success: response?.success,
+                result: response?.result,
+                error: response?.error,
+                action: event.data.action,
+                cardId: event.data.cardId
+            }, '*');
             });
         }
         

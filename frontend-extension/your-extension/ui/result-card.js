@@ -7,6 +7,7 @@
 class ResultCard {
     constructor() {
         this.card = null;
+        this.id = `yz-result-card-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         this.isVisible = false;
         this.currentResult = null;
         this.currentType = null;
@@ -29,12 +30,17 @@ class ResultCard {
         this.minWidth = 400;
         this.minHeight = 300;
         
+        // 元素引用
+        this.header = null;
+        this.iconEl = null;
+        this.titleEl = null;
+        this.resultEl = null;
+        this.loadingEl = null;
+        this.copyBtn = null;
+        
         // 初始化主题
         this.initTheme();
         
-        // 设置主题监听器
-        this.setupThemeListener();
-
         // 类型配置
         this.typeConfig = {
             factCheck: {
@@ -80,67 +86,6 @@ class ResultCard {
     }
     
     /**
-     * 设置主题监听器
-     */
-    setupThemeListener() {
-        // 监听来自content script的主题变更消息
-        window.addEventListener('message', (event) => {
-            if (event.source !== window) return;
-            
-            if (event.data.type === 'YANZHI_YOULI_THEME_CHANGED') {
-                this.setTheme(event.data.theme);
-            }
-            // 新增：监听LLM响应消息
-            else if (event.data.type === 'YANZHI_YOULI_LLM_RESPONSE') {
-                console.log('[ResultCard] 收到LLM响应:', event.data);
-                if (event.data.success && event.data.result) {
-                    // 使用 showLoading 来显示卡片框架
-                    this.showLoading(event.data.action);
-                    // 手动更新结果为实际内容
-                    if (this.resultEl) {
-                        this.resultEl.innerHTML = this.formatResult(event.data.result, event.data.action);
-                    }
-                    // 关键：隐藏加载指示器，显示结果区域
-                    if (this.loadingEl) this.loadingEl.style.display = 'none';
-                    if (this.resultEl) this.resultEl.style.display = 'block';
-                } else {
-                    this.showError(event.data.error || '处理失败');
-                }
-            }
-        });
-        
-        // 监听来自扩展API的消息（主题变更和LLM响应）
-        if (chrome.runtime && chrome.runtime.onMessage) {
-            chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-                if (request.action === 'themeChanged') {
-                    this.setTheme(request.theme);
-                    sendResponse({ success: true });
-                    return true;
-                }
-                // 新增：监听LLM响应
-                else if (request.action === 'llmResponse') {
-                    console.log('[ResultCard] 收到LLM响应:', request);
-                    if (request.success && request.result) {
-                        // 使用 showLoading 来显示卡片框架
-                        this.showLoading(request.action);
-                        // 手动更新结果为实际内容
-                        if (this.resultEl) {
-                            this.resultEl.innerHTML = this.formatResult(request.result, request.action);
-                        }
-                        // 关键：隐藏加载指示器，显示结果区域
-                        if (this.loadingEl) this.loadingEl.style.display = 'none';
-                        if (this.resultEl) this.resultEl.style.display = 'block';
-                    } else {
-                        this.showError(request.error || '处理失败');
-                    }
-                    sendResponse({ success: true });
-                    return true;
-                }
-            });
-        }
-    }
-    
-    /**
      * 设置主题
      * @param {string} theme - 主题模式 ('light' | 'dark')
      */
@@ -173,7 +118,7 @@ class ResultCard {
     createCard() {
         // 创建卡片容器
         this.card = document.createElement('div');
-        this.card.id = 'yz-result-card';
+        this.card.id = this.id;
         this.card.className = 'yz-result-card';
         
         const defaultWidth = 480;
@@ -198,8 +143,8 @@ class ResultCard {
         this.card.style.setProperty('height', `${defaultHeight}px`, 'important');
 
         // 创建头部
-        const header = this.createHeader();
-        this.card.appendChild(header);
+        this.header = this.createHeader();
+        this.card.appendChild(this.header);
 
         // 创建内容区域
         const content = this.createContent();
@@ -222,7 +167,7 @@ class ResultCard {
      */
     createHeader() {
         const header = document.createElement('div');
-        header.id = 'yz-result-header';
+        header.className = 'yz-result-header';
         
         Object.assign(header.style, {
             display: 'flex',
@@ -258,15 +203,15 @@ class ResultCard {
         });
         leftArea.appendChild(dragHandle);
 
-        const icon = document.createElement('span');
-        icon.id = 'yz-result-icon';
-        icon.style.fontSize = '20px';
-        leftArea.appendChild(icon);
+        this.iconEl = document.createElement('span');
+        this.iconEl.className = 'yz-result-icon';
+        this.iconEl.style.fontSize = '20px';
+        leftArea.appendChild(this.iconEl);
 
-        const title = document.createElement('h3');
-        title.id = 'yz-result-title';
-        title.style.cssText = 'margin: 0; font-size: 16px; font-weight: 600;';
-        leftArea.appendChild(title);
+        this.titleEl = document.createElement('h3');
+        this.titleEl.className = 'yz-result-title';
+        this.titleEl.style.cssText = 'margin: 0; font-size: 16px; font-weight: 600;';
+        leftArea.appendChild(this.titleEl);
 
         header.appendChild(leftArea);
 
@@ -311,7 +256,7 @@ class ResultCard {
      */
     createContent() {
         const content = document.createElement('div');
-        content.id = 'yz-result-content';
+        content.className = 'yz-result-content';
         
         Object.assign(content.style, {
             padding: '20px',
@@ -319,7 +264,8 @@ class ResultCard {
             flex: '1',
             lineHeight: '1.7',
             fontSize: '14px',
-            color: '#333'
+            color: '#000',
+            fontWeight: '500'
         });
 
         // 加载状态
@@ -344,7 +290,7 @@ class ResultCard {
 
         // 结果文本
         this.resultEl = document.createElement('div');
-        this.resultEl.id = 'yz-result-text';
+        this.resultEl.className = 'yz-result-text';
         content.appendChild(this.resultEl);
 
         return content;
@@ -367,10 +313,10 @@ class ResultCard {
         });
 
         // 复制按钮
-        const copyBtn = document.createElement('button');
-        copyBtn.id = 'yz-copy-btn';
-        copyBtn.innerHTML = '📋 复制结果';
-        Object.assign(copyBtn.style, {
+        this.copyBtn = document.createElement('button');
+        this.copyBtn.className = 'yz-copy-btn';
+        this.copyBtn.innerHTML = '📋 复制结果';
+        Object.assign(this.copyBtn.style, {
             padding: '10px 20px',
             border: '1px solid #ddd',
             background: '#fff',
@@ -384,15 +330,15 @@ class ResultCard {
             gap: '6px'
         });
 
-        copyBtn.addEventListener('mouseenter', () => {
-            copyBtn.style.background = '#f5f5f5';
+        this.copyBtn.addEventListener('mouseenter', () => {
+            this.copyBtn.style.background = '#f5f5f5';
         });
-        copyBtn.addEventListener('mouseleave', () => {
-            copyBtn.style.background = '#fff';
+        this.copyBtn.addEventListener('mouseleave', () => {
+            this.copyBtn.style.background = '#fff';
         });
-        copyBtn.addEventListener('click', () => this.copyResult());
+        this.copyBtn.addEventListener('click', () => this.copyResult());
 
-        footer.appendChild(copyBtn);
+        footer.appendChild(this.copyBtn);
 
         return footer;
     }
@@ -575,16 +521,13 @@ class ResultCard {
         this.currentType = type;
 
         // 更新头部样式
-        const header = document.getElementById('yz-result-header');
-        if (header) {
-            header.style.background = config.gradient;
+        if (this.header) {
+            this.header.style.background = config.gradient;
         }
 
         // 更新标题和图标
-        const iconEl = document.getElementById('yz-result-icon');
-        const titleEl = document.getElementById('yz-result-title');
-        if (iconEl) iconEl.textContent = config.icon;
-        if (titleEl) titleEl.textContent = config.title;
+        if (this.iconEl) this.iconEl.textContent = config.icon;
+        if (this.titleEl) this.titleEl.textContent = config.title;
 
         // 更新内容
         if (this.resultEl) {
@@ -641,14 +584,11 @@ class ResultCard {
         this.currentType = type;
 
         // 更新头部
-        const header = document.getElementById('yz-result-header');
-        if (header) {
-            header.style.background = config.gradient;
+        if (this.header) {
+            this.header.style.background = config.gradient;
         }
-        const iconEl = document.getElementById('yz-result-icon');
-        const titleEl = document.getElementById('yz-result-title');
-        if (iconEl) iconEl.textContent = config.icon;
-        if (titleEl) titleEl.textContent = config.title;
+        if (this.iconEl) this.iconEl.textContent = config.icon;
+        if (this.titleEl) this.titleEl.textContent = config.title;
 
         // 显示加载
         if (this.loadingEl) this.loadingEl.style.display = 'block';
@@ -701,8 +641,20 @@ class ResultCard {
      * @returns {string} 格式化后的HTML
      */
     formatResult(result, type) {
+        // 检查是否是JSON格式
+        let processedResult = result;
+        try {
+            const parsed = JSON.parse(result);
+            // 如果是JSON，转换为更友好的格式
+            if (typeof parsed === 'object' && parsed !== null) {
+                processedResult = this.formatJSONResult(parsed, type);
+            }
+        } catch (e) {
+            // 不是JSON，保持原样
+        }
+
         // 简单的Markdown格式转换
-        let formatted = result
+        let formatted = processedResult
             .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1976D2;">$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/`(.*?)`/g, '<code style="background: #f5f5f5; padding: 2px 6px; border-radius: 4px; font-family: monospace;">$1</code>')
@@ -721,6 +673,41 @@ class ResultCard {
     }
 
     /**
+     * 格式化JSON结果
+     * @param {Object} json - 解析后的JSON对象
+     * @param {string} type - 处理类型
+     * @returns {string} 格式化后的文本
+     */
+    formatJSONResult(json, type) {
+        if (type === 'factCheck') {
+            // 事实核查结果的特殊处理
+            let result = '';
+            if (json['事实准确性']) {
+                result += `**事实准确性**：${json['事实准确性']}<br>`;
+            }
+            if (json['可信度评估']) {
+                result += `**可信度评估**：${json['可信度评估']}<br>`;
+            }
+            if (json['潜在偏见']) {
+                result += `**潜在偏见**：${json['潜在偏见']}<br>`;
+            }
+            if (json['建议']) {
+                result += `**建议**：${json['建议']}<br>`;
+            }
+            // 处理其他可能的字段
+            for (const [key, value] of Object.entries(json)) {
+                if (!['事实准确性', '可信度评估', '潜在偏见', '建议'].includes(key)) {
+                    result += `**${key}**：${value}<br>`;
+                }
+            }
+            return result || JSON.stringify(json);
+        } else {
+            // 其他类型的JSON结果
+            return JSON.stringify(json, null, 2);
+        }
+    }
+
+    /**
      * 复制结果到剪贴板
      */
     async copyResult() {
@@ -729,26 +716,92 @@ class ResultCard {
         try {
             await navigator.clipboard.writeText(this.currentResult);
             
-            const copyBtn = document.getElementById('yz-copy-btn');
-            const originalText = copyBtn.innerHTML;
-            copyBtn.innerHTML = '✓ 已复制';
-            copyBtn.style.background = '#4CAF50';
-            copyBtn.style.color = '#fff';
-            copyBtn.style.borderColor = '#4CAF50';
+            if (this.copyBtn) {
+                const originalText = this.copyBtn.innerHTML;
+                this.copyBtn.innerHTML = '✓ 已复制';
+                this.copyBtn.style.background = '#4CAF50';
+                this.copyBtn.style.color = '#fff';
+                this.copyBtn.style.borderColor = '#4CAF50';
 
-            setTimeout(() => {
-                copyBtn.innerHTML = originalText;
-                copyBtn.style.background = '#fff';
-                copyBtn.style.color = '#333';
-                copyBtn.style.borderColor = '#ddd';
-            }, 2000);
+                setTimeout(() => {
+                    if (this.copyBtn) {
+                        this.copyBtn.innerHTML = originalText;
+                        this.copyBtn.style.background = '#fff';
+                        this.copyBtn.style.color = '#333';
+                        this.copyBtn.style.borderColor = '#ddd';
+                    }
+                }, 2000);
+            }
         } catch (err) {
             console.error('复制失败:', err);
         }
     }
 }
 
+// 结果卡片管理器
+class ResultCardManager {
+    constructor() {
+        this.cards = [];
+    }
+
+    /**
+     * 创建并显示新的结果卡片
+     * @param {string} result - 处理结果
+     * @param {string} type - 处理类型
+     * @returns {ResultCard} 新创建的卡片实例
+     */
+    createCard(result, type) {
+        const card = new ResultCard();
+        card.show(result, type);
+        this.cards.push(card);
+        return card;
+    }
+
+    /**
+     * 显示加载状态的卡片
+     * @param {string} type - 处理类型
+     * @returns {ResultCard} 新创建的卡片实例
+     */
+    createLoadingCard(type) {
+        const card = new ResultCard();
+        card.showLoading(type);
+        this.cards.push(card);
+        return card;
+    }
+
+    /**
+     * 移除卡片
+     * @param {ResultCard} card - 要移除的卡片实例
+     */
+    removeCard(card) {
+        const index = this.cards.indexOf(card);
+        if (index !== -1) {
+            this.cards.splice(index, 1);
+        }
+    }
+
+    /**
+     * 关闭所有卡片
+     */
+    closeAllCards() {
+        this.cards.forEach(card => card.hide());
+        this.cards = [];
+    }
+
+    /**
+     * 根据ID获取卡片
+     * @param {string} cardId - 卡片ID
+     * @returns {ResultCard|null} 卡片实例或null
+     */
+    getCardById(cardId) {
+        return this.cards.find(card => card.id === cardId) || null;
+    }
+}
+
 // 创建全局实例
 if (typeof window !== 'undefined') {
+    window.ResultCard = ResultCard;
+    window.resultCardManager = new ResultCardManager();
+    // 为了向后兼容，保留旧的resultCard实例
     window.resultCard = new ResultCard();
 }
