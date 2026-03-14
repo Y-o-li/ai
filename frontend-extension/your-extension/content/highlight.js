@@ -5,55 +5,86 @@
 // =============================================================================
 
 // =============================================================================
-// 内联词库数据（解决CSP限制）
+// 内联词库数据（解决 CSP 限制）- 扩充版 v2.0.0
 // =============================================================================
 const INLINE_WORD_DATA = {
-  "version": "1.0.0",
-  "description": "本地煽动性词库 - 用于本地检测网页中的煽动性语言",
+  "version": "2.0.0",
+  "description": "本地煽动性词库 - 用于本地检测网页中的煽动性语言（扩充版）",
   "categories": {
     "basic_incitement": {
       "name": "基础煽动性词汇",
       "words": [
         "打倒", "推翻", "消灭", "杀死", "暴力", "反抗", "抵制", "斗争", "冲突", "破坏",
-        "封杀", "妖魔化", "揭竿而起", "卖国贼", "汉奸", "走狗", "清算", "严惩"
+        "封杀", "妖魔化", "揭竿而起", "卖国贼", "汉奸", "走狗", "清算", "严惩",
+        "摧毁", "粉碎", "铲除", "肃清", "清除", "砸烂", "撕碎", "践踏", "蹂躏", "扼杀",
+        "敌人", "叛徒", "帮凶", "爪牙", "毒瘤", "祸害", "恶魔", "罪犯", "败类",
+        "邪恶", "残忍", "野蛮", "疯狂", "丧心病狂", "令人发指", "惨无人道", "灭绝人性",
+        "绝不放过", "血债血偿", "以眼还眼", "赶尽杀绝", "斩草除根", "不留后路"
       ]
     },
     "terrorism": {
       "name": "恐怖主义相关",
       "words": [
         "恐怖袭击", "爆炸", "袭击", "血洗", "屠杀", "极端", "恐怖组织", "炸弹", "纵火", "劫持",
-        "血债血偿", "暴徒"
+        "血债血偿", "暴徒", "暗杀", "行刺", "谋害", "刺杀", "恐怖分子", "激进组织",
+        "武装分子", "自杀式", "人体炸弹", "恐怖活动", "恐怖主义", "极端主义",
+        "宗教极端", "暴力恐怖", "分裂势力"
       ]
     },
     "political_incitement": {
       "name": "政治煽动相关",
       "words": [
         "颠覆", "造反", "起义", "革命", "暗杀", "政变", "分裂", "独立", "政权", "统治",
-        "反华势力", "境外势力", "渗透"
+        "反华势力", "境外势力", "渗透", "夺权", "篡位", "谋反", "叛乱", "暴动",
+        "兵变", "宫廷政变", "颜色革命", "和平演变", "推翻政府", "颠覆国家",
+        "危害国家安全", "勾结境外", "卖国求荣", "汉奸", "卖国贼"
       ]
     },
     "social_incitement": {
       "name": "社会煽动相关",
       "words": [
         "煽动", "蛊惑", "造谣", "传谣", "恐慌", "混乱", "暴乱", "骚乱", "聚众", "闹事",
-        "妖言惑众", "煽风点火"
+        "妖言惑众", "煽风点火", "集结", "示威", "游行", "请愿", "上访", "集体维权",
+        "群体事件", "围堵", "冲击", "占领", "静坐", "绝食", "抗议", "声讨",
+        "谴责", "号召", "动员", "鼓动", "唆使", "教唆"
       ]
     },
     "discrimination": {
       "name": "歧视仇恨相关",
       "words": [
-        "种族歧视", "民族仇恨", "宗教冲突", "地域歧视", "性别歧视", "排外", "仇恨", "敌视", "蔑视", "侮辱"
+        "种族歧视", "民族仇恨", "宗教冲突", "地域歧视", "性别歧视", "排外", "仇恨", "敌视", "蔑视", "侮辱",
+        "诽谤", "污蔑", "抹黑", "丑化", "标签化", "刻板印象", "偏见", "歧视",
+        "排斥", "孤立", "霸凌", "网络暴力", "人肉搜索", "恶意攻击"
       ]
     }
   },
   "patterns": {
     "intensifiers": [
-      "必须", "一定", "绝对", "坚决", "彻底", "全面", "马上", "立即"
+      "必须", "一定", "绝对", "坚决", "彻底", "全面", "马上", "立即",
+      "立刻", "赶快", "赶紧", "务必", "切不可", "绝不能"
     ],
     "call_to_action": [
-      "行动起来", "一起", "大家", "所有人", "团结", "联合起来"
+      "行动起来", "一起", "大家", "所有人", "团结", "联合起来",
+      "携手", "共同", "一齐", "都来", "别再"
+    ],
+    "dangerous_patterns": [
+      "我们必须", "我们要", "让我们一起", "大家都要", "所有人必须",
+      "坚决做到", "彻底消灭", "绝不放过", "一定要", "切不可"
     ]
-  }
+  },
+  "synonyms": {
+    "暴力": ["武力", "强制", "强硬手段", "激烈方式"],
+    "打倒": ["推翻", "颠覆", "拉下马", "搞垮"],
+    "消灭": ["铲除", "肃清", "清除", "抹去", "除掉"],
+    "反抗": ["抵抗", "反对", "对抗", "回击"],
+    "斗争": ["战斗", "抗争", "搏斗", "较量"],
+    "敌人": ["对手", "敌对势力", "对立面", "仇敌"],
+    "破坏": ["毁坏", "摧毁", "损害", "败坏"]
+  },
+  "whitelist": [
+    "研究表明", "数据显示", "据统计", "专家认为", "据报道", "据悉",
+    "文章指出", "论文提到", "历史上", "在小说中", "电影里"
+  ]
 };
 
 
@@ -63,14 +94,24 @@ class SensitiveWordDetector {
         this.wordMap = new Map();
         this.isLoaded = false;
         this.cache = new Map();
-        this.maxCacheSize = 200;
+        this.maxCacheSize = 500; // 优化：增加缓存大小
+        this.cacheTTL = 5 * 60 * 1000; // 优化：5 分钟过期
+        
+        // 新增：Trie 树结构
+        this.trieTree = null;
+        
+        // 新增：同义词和白名单
+        this.synonyms = {};
+        this.whitelist = [];
+        this.patterns = {};
         
         // 配置
         this.config = {
             minTextLength: 1,
             highlightOpacity: 0.3,
             highConfidenceThreshold: 0.8,
-            mediumConfidenceThreshold: 0.5
+            mediumConfidenceThreshold: 0.5,
+            contextWindowSize: 20 // 上下文窗口大小
         };
 
         // 添加消息监听  
@@ -99,7 +140,7 @@ class SensitiveWordDetector {
 
     /**
      * 处理词库数据
-     * @param {Object} data - 词库JSON数据
+     * @param {Object} data - 词库 JSON 数据
      */
     processWordList(data) {
         // 提取所有词汇
@@ -107,7 +148,7 @@ class SensitiveWordDetector {
         Object.values(data.categories).forEach(category => {
             this.wordList.push(...category.words);
         });
-        
+            
         // 构建词频映射
         this.wordList.forEach((word, index) => {
             this.wordMap.set(word, {
@@ -115,10 +156,27 @@ class SensitiveWordDetector {
                 category: this.getWordCategory(word, data.categories)
             });
         });
-        
+            
+        // 新增：保存同义词和白名单
+        if (data.synonyms) {
+            this.synonyms = data.synonyms;
+        }
+        if (data.whitelist) {
+            this.whitelist = data.whitelist;
+        }
+        if (data.patterns) {
+            this.patterns = data.patterns;
+        }
+            
+        // 新增：构建 Trie 树
+        this.buildTrieTree();
+            
         this.isLoaded = true;
         console.log('✅ 煽动性词库加载完成，共', this.wordList.length, '个词汇');
-        
+        console.log('🌳 Trie 树构建完成');
+        console.log('📝 同义词组:', Object.keys(this.synonyms).length);
+        console.log('✅ 白名单词汇:', this.whitelist.length);
+            
         // 触发一个自定义事件，让其他部分知道词库已加载
         window.dispatchEvent(new CustomEvent('yz-wordlist-loaded'));
     }
@@ -151,7 +209,157 @@ class SensitiveWordDetector {
     }
 
     /**
-     * 检测文本中的煽动性内容
+     * 构建 Trie 树（前缀树）用于快速匹配
+     */
+    buildTrieTree() {
+        const root = { children: {}, isEnd: false, word: null, category: null };
+        
+        for (const word of this.wordList) {
+            let node = root;
+            const wordInfo = this.wordMap.get(word);
+            
+            for (const char of word) {
+                if (!node.children[char]) {
+                    node.children[char] = { children: {}, isEnd: false, word: null, category: null };
+                }
+                node = node.children[char];
+            }
+            node.isEnd = true;
+            node.word = word;
+            node.category = wordInfo ? wordInfo.category : null;
+        }
+        
+        this.trieTree = root;
+    }
+
+    /**
+     * 使用 Trie 树进行多模式匹配
+     * @param {string} text - 待检测文本
+     * @returns {Array} 匹配结果数组
+     */
+    matchWithTrie(text) {
+        if (!this.trieTree) return [];
+        
+        const matches = [];
+        const len = text.length;
+        
+        for (let i = 0; i < len; i++) {
+            let node = this.trieTree;
+            let matchStr = '';
+            
+            for (let j = i; j < len; j++) {
+                const char = text[j];
+                if (!node.children[char]) break;
+                
+                node = node.children[char];
+                matchStr += char;
+                
+                if (node.isEnd) {
+                    matches.push({
+                        word: node.word,
+                        start: i,
+                        end: j + 1,
+                        category: node.category
+                    });
+                }
+            }
+        }
+        
+        return matches;
+    }
+
+    /**
+     * 检查是否在白名单语境中
+     * @param {string} text - 完整文本
+     * @param {number} matchStart - 匹配开始位置
+     * @returns {boolean}
+     */
+    isInWhitelistContext(text, matchStart) {
+        // 检查前后文是否包含白名单短语
+        const contextStart = Math.max(0, matchStart - 10);
+        const context = text.substring(contextStart, matchStart + 20);
+        
+        for (const phrase of this.whitelist) {
+            if (context.includes(phrase)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检测程度副词和号召性短语
+     * @param {string} text - 上下文文本
+     * @returns {Object} 模式检测结果
+     */
+    detectPatterns(text) {
+        const result = {
+            hasIntensifier: false,
+            hasCallToAction: false,
+            hasDangerousPattern: false,
+            intensifiers: [],
+            callToActions: [],
+            dangerousPatterns: []
+        };
+        
+        // 检测程度副词
+        if (this.patterns.intensifiers) {
+            for (const intensifier of this.patterns.intensifiers) {
+                if (text.includes(intensifier)) {
+                    result.hasIntensifier = true;
+                    result.intensifiers.push(intensifier);
+                }
+            }
+        }
+        
+        // 检测号召性短语
+        if (this.patterns.call_to_action) {
+            for (const call of this.patterns.call_to_action) {
+                if (text.includes(call)) {
+                    result.hasCallToAction = true;
+                    result.callToActions.push(call);
+                }
+            }
+        }
+        
+        // 检测危险句式
+        if (this.patterns.dangerous_patterns) {
+            for (const pattern of this.patterns.dangerous_patterns) {
+                if (text.includes(pattern)) {
+                    result.hasDangerousPattern = true;
+                    result.dangerousPatterns.push(pattern);
+                }
+            }
+        }
+        
+        return result;
+    }
+
+    /**
+     * 检测否定词
+     * @param {string} context - 上下文
+     * @returns {boolean}
+     */
+    containsNegation(context) {
+        const negations = [
+            '不', '没', '无', '非', '勿', '别',
+            '不要', '不能', '不会', '不可', '不许', '未必', '不妨'
+        ];
+        return negations.some(neg => context.includes(neg));
+    }
+
+    /**
+     * 判断是否为疑问句
+     * @param {string} context - 上下文
+     * @returns {boolean}
+     */
+    isQuestion(context) {
+        return /[？?]/.test(context) || 
+               /^(什么 | 为什么 | 怎么 | 如何 | 是否 | 能否|难道)/.test(context);
+    }
+
+    /**
+     * 检测文本中的煽动性内容（优化版：使用 Trie 树 + 上下文理解）
      * @param {string} text - 待检测文本
      * @returns {Object} 检测结果
      */
@@ -159,49 +367,100 @@ class SensitiveWordDetector {
         if (!this.isLoaded || !text || text.length < this.config.minTextLength) {
             return { isInciting: false, confidence: 0, matches: [] };
         }
-
-        // 检查缓存
-        if (this.cache.has(text)) {
-            return this.cache.get(text);
-        }
-
-        const matches = [];
-        let totalScore = 0;
-
-        // 遍历词库进行匹配
-        for (const word of this.wordList) {
-            if (text.includes(word)) {
-                console.log(`🔍 发现匹配: "${word}" 在文本中`);
-                const wordInfo = this.wordMap.get(word);
-                const positions = this.findAllPositions(text, word);
-                
-                positions.forEach(pos => {
-                    matches.push({
-                        word,
-                        category: wordInfo.category,
-                        start: pos.start,
-                        end: pos.end,
-                        score: this.calculateWordScore(word, text)
-                    });
-                });
-                
-                totalScore += this.calculateWordScore(word, text);
+    
+        // 检查缓存（带 TTL）
+        const cacheKey = text;
+        if (this.cache.has(cacheKey)) {
+            const cached = this.cache.get(cacheKey);
+            // 检查是否过期
+            if (Date.now() - cached.timestamp < this.cacheTTL) {
+                return cached.result;
+            } else {
+                this.cache.delete(cacheKey);
             }
         }
-
+    
+        // 新增：使用 Trie 树进行快速匹配
+        const baseMatches = this.matchWithTrie(text);
+            
+        // 处理匹配结果，添加上下文理解
+        const enhancedMatches = [];
+        let totalScore = 0;
+    
+        for (const match of baseMatches) {
+            // 检查白名单语境
+            if (this.isInWhitelistContext(text, match.start)) {
+                console.log(`⚠️ 白名单语境，跳过："${match.word}"`);
+                continue; // 跳过学术、新闻等语境
+            }
+    
+            // 提取上下文
+            const contextStart = Math.max(0, match.start - this.config.contextWindowSize);
+            const contextEnd = Math.min(text.length, match.end + this.config.contextWindowSize);
+            const context = text.substring(contextStart, contextEnd);
+    
+            // 检测否定词和疑问句
+            const hasNegation = this.containsNegation(context);
+            const isQuestionContext = this.isQuestion(context);
+    
+            // 检测模式（程度副词、号召性等）
+            const patternResult = this.detectPatterns(context);
+    
+            // 计算基础分数
+            let wordScore = this.calculateWordScore(match.word, text);
+    
+            // 根据语境调整分数
+            if (hasNegation) {
+                wordScore *= 0.3; // 否定语境降权，如“不应该使用暴力”
+            }
+            if (isQuestionContext) {
+                wordScore *= 0.5; // 疑问语境降权，如“什么是暴力？”
+            }
+    
+            // 危险模式加权
+            if (patternResult.hasIntensifier) {
+                wordScore *= 1.3; // “必须暴力”比“暴力”更严重
+            }
+            if (patternResult.hasCallToAction) {
+                wordScore *= 1.5; // “大家一起反抗”更严重
+            }
+            if (patternResult.hasDangerousPattern) {
+                wordScore *= 1.8; // 危险句式，大幅提高权重
+            }
+    
+            enhancedMatches.push({
+                ...match,
+                score: wordScore,
+                context,
+                hasNegation,
+                isQuestionContext,
+                patterns: patternResult
+            });
+    
+            totalScore += wordScore;
+        }
+    
         // 计算整体置信度
-        const confidence = this.calculateConfidence(totalScore, matches.length, text.length);
+        const confidence = this.calculateConfidence(totalScore, enhancedMatches.length, text.length);
         const isInciting = confidence >= this.config.mediumConfidenceThreshold;
-
+    
         const result = {
             isInciting,
             confidence,
-            matches: matches.sort((a, b) => a.start - b.start)
+            matches: enhancedMatches.sort((a, b) => a.start - b.start)
         };
-
-        // 存入缓存
-        this.addToCache(text, result);
-
+    
+        // 存入缓存（带时间戳）
+        this.cache.set(cacheKey, {
+            result,
+            timestamp: Date.now()
+        });
+    
+        // 清理过期缓存
+        if (this.cache.size > this.maxCacheSize) {
+            this.clearOldCache();
+        }
+    
         return result;
     }
 
@@ -275,6 +534,19 @@ class SensitiveWordDetector {
             this.cache.delete(firstKey);
         }
         this.cache.set(key, value);
+    }
+
+    /**
+     * 清理过期缓存
+     */
+    clearOldCache() {
+        const now = Date.now();
+        for (const [key, cached] of this.cache.entries()) {
+            if (now - cached.timestamp > this.cacheTTL) {
+                this.cache.delete(key);
+            }
+        }
+        console.log(`🧹 清理缓存完成，当前缓存大小：${this.cache.size}`);
     }
 
     /**
