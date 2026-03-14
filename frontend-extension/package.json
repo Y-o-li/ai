@@ -1,6 +1,6 @@
 {
   "name": "incitement-detector-extension",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "浏览器扩展，用于检测网页中的煽动性语言",
   "main": "browser_extension/background.js",
   "scripts": {
@@ -27,12 +27,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "local"
+    "url": "https://github.com/Y-o-li/ai.git"
   },
   "bugs": {
-    "url": "local"
+    "url": "https://github.com/Y-o-li/ai/issues"
   },
-  "homepage": "local",
+  "homepage": "https://github.com/Y-o-li/ai",
   "browser": {
     "chrome": ">=88.0.0"
   },
