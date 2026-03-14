@@ -25,6 +25,11 @@
   --yz-warning: #ffc107;
   --yz-danger: #dc3545;
   --yz-info: #17a2b8;
+  
+  /* 统一圆角设计 - v1.3.0 新增 */
+  --yz-border-radius-sm: 8px;
+  --yz-border-radius-md: 12px;  /* 推荐使用 */
+  --yz-border-radius-lg: 16px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -75,10 +80,65 @@
   --yz-info: #00bcd4;
 }
 
+/* =============================================================================
+   微交互动画 - v1.3.0 新增
+   ============================================================================= */
+
+/* 按钮悬停动画 */
+.yz-toolbar-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.yz-toolbar-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.yz-toolbar-btn:active {
+  transform: translateY(0);
+}
+
+/* 卡片出现动画 */
+@keyframes yz-slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 结果卡片动画类 - 通过 JS 添加/移除 */
+.yz-result-card-animate {
+  animation: yz-slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 工具栏出现动画 */
+#yz-floating-toolbar {
+  animation: yz-slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 高亮元素动画 */
+.yz-highlighted,
+.inciting-text {
+  animation: yz-pulse 0.3s ease;
+}
+
+@keyframes yz-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
 /* 煽动性文本高亮样式 */
 .yz-highlighted,
 .inciting-text {
-    border-radius: 12px;
+    border-radius: var(--yz-border-radius-md);  /* 统一使用中等圆角 */
     padding: 0 2px;
     transition: all 0.2s ease;
     cursor: help;
@@ -115,7 +175,7 @@
     position: fixed !important;
     background: var(--yz-bg-primary) !important;
     border: 1px solid var(--yz-border-color) !important;
-    border-radius: 12px !important;
+    border-radius: var(--yz-border-radius-md) !important;  /* 统一使用中等圆角 */
     box-shadow: 0 25px 50px -12px var(--yz-shadow-heavy) !important;
     z-index: 2147483646 !important;
     flex-direction: column !important;
@@ -270,7 +330,7 @@
 #yz-floating-toolbar {
     position: absolute !important;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    border-radius: 12px !important;
+    border-radius: var(--yz-border-radius-md) !important;  /* 统一使用中等圆角 */
     padding: 8px 12px !important;
     box-shadow: 0 8px 32px var(--yz-shadow-heavy) !important;
     z-index: 2147483647 !important;
@@ -283,7 +343,7 @@
 #yz-result-card {
     position: fixed !important;
     background: #fff !important;
-    border-radius: 12px !important;
+    border-radius: var(--yz-border-radius-md) !important;  /* 统一使用中等圆角 */
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
     z-index: 2147483646 !important;
     flex-direction: column !important;

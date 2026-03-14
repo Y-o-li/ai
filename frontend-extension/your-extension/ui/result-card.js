@@ -127,15 +127,14 @@ class ResultCard {
         Object.assign(this.card.style, {
             position: 'fixed',
             background: '#fff',
-            borderRadius: '16px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+            borderRadius: 'var(--yz-border-radius-md)',  // 使用 CSS 变量
+            boxShadow: '0 25px 50px -12px var(--yz-shadow-heavy)',
             zIndex: '2147483646',
             display: 'none',
             flexDirection: 'column',
             overflow: 'hidden',
-            opacity: '0',
-            transition: 'opacity 0.3s ease',
             userSelect: 'none'
+            // 移除 opacity 和 transition，让 CSS 动画生效
         });
 
         // 使用 setProperty 设置宽高，以覆盖 CSS 中的 !important
@@ -553,10 +552,13 @@ class ResultCard {
         // 显示卡片
         this.card.style.display = 'flex';
 
-        // 触发动画
-        requestAnimationFrame(() => {
-            this.card.style.opacity = '1';
-        });
+        // 触发动画 - 添加动画类
+        this.card.classList.add('yz-result-card-animate');
+
+        // 动画结束后移除类（便于下次重新播放）
+        setTimeout(() => {
+            this.card.classList.remove('yz-result-card-animate');
+        }, 300); // 与动画时长一致
 
         // 添加 Esc 监听
         document.addEventListener('keydown', this.escHandler);
@@ -609,9 +611,13 @@ class ResultCard {
         // 显示卡片
         this.card.style.display = 'flex';
 
-        requestAnimationFrame(() => {
-            this.card.style.opacity = '1';
-        });
+        // 触发动画 - 添加动画类
+        this.card.classList.add('yz-result-card-animate');
+
+        // 动画结束后移除类
+        setTimeout(() => {
+            this.card.classList.remove('yz-result-card-animate');
+        }, 300);
 
         this.isVisible = true;
     }
@@ -625,10 +631,14 @@ class ResultCard {
         // 移除 Esc 监听
         document.removeEventListener('keydown', this.escHandler);
         
+        // 添加淡出动画类
+        this.card.style.transition = 'opacity 0.3s ease';
         this.card.style.opacity = '0';
 
         setTimeout(() => {
             this.card.style.display = 'none';
+            this.card.style.opacity = '';  // 清空内联样式
+            this.card.style.transition = '';  // 清空内联样式
         }, 300);
 
         this.isVisible = false;

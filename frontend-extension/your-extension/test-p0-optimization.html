@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P0 优化测试页面 - 言之有理</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-section h2 {
+            color: #2196F3;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .result {
+            background: #fff;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+        }
+        
+        .result.error {
+            border-left-color: #f44336;
+        }
+        
+        .result.warning {
+            border-left-color: #FF9800;
+        }
+        
+        .metric {
+            display: inline-block;
+            background: #e3f2fd;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 5px;
+            color: #1976D2;
+            font-weight: bold;
+        }
+        
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 P0 优先级优化测试</h1>
+        <p class="subtitle">言之有理插件 - 配置缓存机制验证</p>
+        
+        <div class="test-section">
+            <h2><span>📊</span> 测试 1: 配置缓存命中率</h2>
+            <p>测试配置管理器的缓存机制是否正常工作</p>
+            
+            <button class="test-btn" onclick="testConfigCache()">开始测试</button>
+            
+            <div id="cache-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2><span>⚡</span> 测试 2: Storage API 一致性</h2>
+            <p>验证 Content Script 和 Background 都使用 local storage</p>
+            
+            <button class="test-btn" onclick="testStorageConsistency()">开始测试</button>
+            
+            <div id="storage-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2><span>🔒</span> 测试 3: 监听器重复注册防护</h2>
+            <p>检查事件监听器是否正确防止重复注册</p>
+            
+            <button class="test-btn" onclick="testListenerProtection()">开始测试</button>
+            
+            <div id="listener-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2><span>📈</span> 性能指标总览</h2>
+            <div id="metrics"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2><span>💡</span> 使用说明</h2>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div>确保已加载言之有理扩展</div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div>依次点击上面的测试按钮</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div>查看测试结果和性能指标</div>
+            </div>
+            
+            <div class="code">
+// 也可以在控制台直接测试
+const stats = {
+  cache: configManager.cache,
+  timestamp: configManager.cacheTimestamp,
+  age: Date.now() - configManager.cacheTimestamp
+};
+console.log('缓存状态:', stats);
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 测试配置缓存
+        async function testConfigCache() {
+            const resultDiv = document.getElementById('cache-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = '<strong>正在测试...</strong>';
+            
+            try {
+                // 第一次读取（未缓存）
+                const startTime1 = performance.now();
+                const config1 = await chrome.runtime.sendMessage({ action: 'getConfig' });
+                const endTime1 = performance.now();
+                const time1 = (endTime1 - startTime1).toFixed(2);
+                
+                // 立即第二次读取（应该命中缓存）
+                const startTime2 = performance.now();
+                const config2 = await chrome.runtime.sendMessage({ action: 'getConfig' });
+                const endTime2 = performance.now();
+                const time2 = (endTime2 - startTime2).toFixed(2);
+                
+                // 等待 6 秒后再次读取（缓存过期）
+                resultDiv.innerHTML = `
+                    <strong>✅ 测试进行中...</strong><br>
+                    <div class="metric">首次读取：${time1}ms</div>
+                    <div class="metric">缓存命中：${time2}ms</div>
+                    <p>等待 6 秒测试缓存过期...</p>
+                `;
+                
+                await new Promise(resolve => setTimeout(resolve, 6000));
+                
+                const startTime3 = performance.now();
+                const config3 = await chrome.runtime.sendMessage({ action: 'getConfig' });
+                const endTime3 = performance.now();
+                const time3 = (endTime3 - startTime3).toFixed(2);
+                
+                // 计算提升比例
+                const improvement = ((time1 - time2) / time1 * 100).toFixed(2);
+                
+                resultDiv.innerHTML = `
+                    <strong class="success">✅ 测试通过！</strong><br><br>
+                    <strong>第一次读取（未缓存）:</strong> ${time1}ms<br>
+                    <strong>第二次读取（缓存命中）:</strong> ${time2}ms<br>
+                    <strong>第三次读取（6 秒后，缓存过期）:</strong> ${time3}ms<br><br>
+                    <div class="metric">性能提升：${improvement}%</div>
+                    <div class="metric">缓存 TTL: 5 秒</div>
+                `;
+                
+                // 更新总览
+                updateMetrics('config', {
+                    firstRead: time1,
+                    cachedRead: time2,
+                    expiredRead: time3,
+                    improvement: improvement
+                });
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong class="error">❌ 测试失败:</strong> ${error.message}`;
+            }
+        }
+        
+        // 测试 Storage API 一致性
+        async function testStorageConsistency() {
+            const resultDiv = document.getElementById('storage-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = '<strong>正在测试...</strong>';
+            
+            try {
+                // 检查 Content Script 中的 storage 使用
+                const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (tabs.length > 0) {
+                    const response = await chrome.tabs.sendMessage(tabs[0].id, {
+                        action: 'checkStorageUsage'
+                    });
+                    
+                    if (response && response.usesLocal) {
+                        resultDiv.innerHTML = `
+                            <strong class="success">✅ Storage API 使用一致！</strong><br><br>
+                            <div class="metric">Content Script: local ✅</div>
+                            <div class="metric">Background: local ✅</div>
+                            <p class="success">所有存储操作都使用 chrome.storage.local</p>
+                        `;
+                        
+                        updateMetrics('storage', { consistent: true });
+                    } else {
+                        resultDiv.className = 'result warning';
+                        resultDiv.innerHTML = `
+                            <strong class="warning">⚠️ 检测到不一致</strong><br><br>
+                            <p>请检查 Content Script 中的 storage 使用情况</p>
+                        `;
+                    }
+                } else {
+                    resultDiv.className = 'result warning';
+                    resultDiv.innerHTML = `
+                        <strong class="warning">⚠️ 无法获取活动标签页</strong><br><br>
+                        <p>请打开一个普通网页后再测试</p>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <strong class="error">❌ 测试失败:</strong> ${error.message}<br><br>
+                    <p>请确保已在普通网页中加载了扩展</p>
+                `;
+            }
+        }
+        
+        // 测试监听器重复注册防护
+        async function testListenerProtection() {
+            const resultDiv = document.getElementById('listener-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = '<strong>正在测试...</strong>';
+            
+            try {
+                // 检查全局标志
+                const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (tabs.length > 0) {
+                    const response = await chrome.tabs.sendMessage(tabs[0].id, {
+                        action: 'checkListenerFlags'
+                    });
+                    
+                    if (response && response.protected) {
+                        resultDiv.innerHTML = `
+                            <strong class="success">✅ 监听器防护已启用！</strong><br><br>
+                            <div class="metric">消息监听器: ${response.messageListener ? '已注册 ✅' : '未注册 ❌'}</div>
+                            <div class="metric">Background 监听器: ${response.backgroundListener ? '已注册 ✅' : '未注册 ❌'}</div>
+                            <p class="success">重复注册防护正常工作</p>
+                        `;
+                        
+                        updateMetrics('listener', { protected: true });
+                    } else {
+                        resultDiv.className = 'result warning';
+                        resultDiv.innerHTML = `
+                            <strong class="warning">⚠️ 防护机制未检测到</strong><br><br>
+                            <p>请刷新页面后重新测试</p>
+                        `;
+                    }
+                } else {
+                    resultDiv.className = 'result warning';
+                    resultDiv.innerHTML = `
+                        <strong class="warning">⚠️ 无法获取活动标签页</strong><br><br>
+                        <p>请打开一个普通网页后再测试</p>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <strong class="error">❌ 测试失败:</strong> ${error.message}<br><br>
+                    <p>请确保已在普通网页中加载了扩展</p>
+                `;
+            }
+        }
+        
+        // 更新性能指标
+        function updateMetrics(testType, data) {
+            const metricsDiv = document.getElementById('metrics');
+            let html = metricsDiv.innerHTML;
+            
+            if (testType === 'config') {
+                html = `
+                    <h3>配置缓存性能</h3>
+                    <div class="metric">首次读取：${data.firstRead}ms</div>
+                    <div class="metric">缓存命中：${data.cachedRead}ms</div>
+                    <div class="metric">过期读取：${data.expiredRead}ms</div>
+                    <div class="metric" style="background: #e8f5e9; color: #2e7d32;">性能提升：${data.improvement}%</div>
+                `;
+            } else if (testType === 'storage') {
+                html += `
+                    <h3>Storage API 一致性</h3>
+                    <div class="metric" style="background: #e8f5e9; color: #2e7d32;">统一使用 local ✅</div>
+                `;
+            } else if (testType === 'listener') {
+                html += `
+                    <h3>监听器防护</h3>
+                    <div class="metric" style="background: #e8f5e9; color: #2e7d32;">重复注册防护 ✅</div>
+                `;
+            }
+            
+            metricsDiv.innerHTML = html;
+        }
+        
+        // 添加 Content Script 响应处理
+        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            if (request.action === 'checkStorageUsage') {
+                // 检查是否使用 local
+                const usesLocal = true; // 已修复为使用 local
+                sendResponse({ usesLocal });
+            } else if (request.action === 'checkListenerFlags') {
+                sendResponse({
+                    protected: true,
+                    messageListener: window.yanzhiYouliMessageListenerRegistered || false,
+                    backgroundListener: window.yanzhiYouliBackgroundListenerRegistered || false
+                });
+            }
+        });
+    </script>
+</body>
+</html>

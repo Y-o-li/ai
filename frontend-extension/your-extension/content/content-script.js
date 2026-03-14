@@ -25,19 +25,24 @@
         notifyConfigChange(config);
     });
     
-    // 监听来自扩展的消息
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === 'themeChanged') {
-            applyPluginTheme(request.theme);
-            sendResponse({ success: true });
-            return true;
-        }
+    // 监听来自扩展的消息（防止重复注册）
+    if (!window.yanzhiYouliMessageListenerRegistered) {
+        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            if (request.action === 'themeChanged') {
+                applyPluginTheme(request.theme);
+                sendResponse({ success: true });
+                return true;
+            }
+            
+            if (request.action === 'getCurrentSystemTheme') {
+                sendResponse({ theme: detectSystemTheme() });
+                return true;
+            }
+        });
         
-        if (request.action === 'getCurrentSystemTheme') {
-            sendResponse({ theme: detectSystemTheme() });
-            return true;
-        }
-    });
+        window.yanzhiYouliMessageListenerRegistered = true;
+        console.log('✅ 消息监听器已注册');
+    }
     
     window.addEventListener('message', (event) => {
         if (event.source !== window) return;
@@ -164,12 +169,12 @@ async function getCurrentTheme() {
  */
 async function getConfig() {
     try {
-        const result = await chrome.storage.sync.get({
+        const result = await chrome.storage.local.get({  // 修复：使用 local 而不是 sync
             alwaysShowToolbar: false,
             theme: 'light'
         });
         cachedConfig = { ...cachedConfig, ...result };
-        console.log('[Content Script] 从storage加载配置:', cachedConfig);
+        console.log('[Content Script] 从 storage 加载配置:', cachedConfig);
         return cachedConfig;
     } catch (error) {
         console.error('[Content Script] 获取配置失败:', error);
@@ -184,7 +189,7 @@ async function getConfig() {
  */
 async function saveConfig(config) {
     try {
-        await chrome.storage.sync.set(config);
+        await chrome.storage.local.set(config);  // 修复：使用 local 而不是 sync
         cachedConfig = { ...cachedConfig, ...config };
         console.log('[Content Script] 配置已保存:', cachedConfig);
         
@@ -299,36 +304,41 @@ function applyThemeToPage(theme) {
         console.log('✅ 文本选择功能初始化完成');
     }
 
-    // 监听来自background的消息
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        console.log('📥 Content script收到消息:', request.action);
-
-        if (request.action === 'rescan') {
-            // 清除已有的高亮
-            clearHighlights();
-            // 重新扫描
-            initHighlight().then(() => {
-                sendResponse({ success: true });
-            }).catch(error => {
-                sendResponse({ success: false, error: error.message });
-            });
-            return true;
-        }
-
-        if (request.action === 'toggleHighlight') {
-            CONFIG.highlightEnabled = request.enabled;
-            if (CONFIG.highlightEnabled) {
-                initHighlight();
-            } else {
+    // 监听来自 background 的消息（防止重复注册）
+    if (!window.yanzhiYouliBackgroundListenerRegistered) {
+        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            console.log('📥 Content script 收到消息:', request.action);
+    
+            if (request.action === 'rescan') {
+                // 清除已有的高亮
                 clearHighlights();
+                // 重新扫描
+                initHighlight().then(() => {
+                    sendResponse({ success: true });
+                }).catch(error => {
+                    sendResponse({ success: false, error: error.message });
+                });
+                return true;
             }
-            sendResponse({ success: true });
+    
+            if (request.action === 'toggleHighlight') {
+                CONFIG.highlightEnabled = request.enabled;
+                if (CONFIG.highlightEnabled) {
+                    initHighlight();
+                } else {
+                    clearHighlights();
+                }
+                sendResponse({ success: true });
+                return false;
+            }
+    
+            sendResponse({ success: false, error: '未知操作' });
             return false;
-        }
-
-        sendResponse({ success: false, error: '未知操作' });
-        return false;
-    });
+        });
+            
+        window.yanzhiYouliBackgroundListenerRegistered = true;
+        console.log('✅ Background 消息监听器已注册');
+    }
 
     // 监听来自toolbar和历史记录的消息（转发给background）
     window.addEventListener('message', (event) => {

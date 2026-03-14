@@ -10,6 +10,52 @@
 // 全局处理器实例
 let llmProcessor = null;
 
+// 配置管理器（带缓存）
+class ConfigManager {
+  constructor() {
+    this.cache = null;
+    this.cacheTimestamp = 0;
+    this.CACHE_TTL = 5000; // 5 秒缓存
+  }
+  
+  async getConfig() {
+    const now = Date.now();
+    
+    // 如果缓存有效，直接返回
+    if (this.cache && (now - this.cacheTimestamp) < this.CACHE_TTL) {
+      console.log('[ConfigManager] 缓存命中');
+      return this.cache;
+    }
+    
+    // 否则从 storage 读取
+    console.log('[ConfigManager] 从 storage 读取配置');
+    const result = await chrome.storage.local.get('config');
+    this.cache = result.config || DEFAULT_CONFIG;
+    this.cacheTimestamp = now;
+    
+    console.log('[ConfigManager] 读取并缓存配置:', JSON.stringify(this.cache));
+    return this.cache;
+  }
+  
+  async saveConfig(config) {
+    console.log('[ConfigManager] 保存配置:', JSON.stringify(config));
+    await chrome.storage.local.set({ config });
+    // 更新缓存
+    this.cache = config;
+    this.cacheTimestamp = Date.now();
+    console.log('[ConfigManager] 配置已保存并更新缓存');
+  }
+  
+  invalidateCache() {
+    console.log('[ConfigManager] 使缓存失效');
+    this.cache = null;
+    this.cacheTimestamp = 0;
+  }
+}
+
+// 创建全局配置管理器实例
+const configManager = new ConfigManager();
+
 // 默认配置
 const DEFAULT_CONFIG = {
   provider: 'qwen',
@@ -43,7 +89,7 @@ const DEFAULT_STATS = {
  */
 async function getCurrentTheme() {
   try {
-    const config = await getConfig();
+    const config = await configManager.getConfig();
     
     // 防御：确保 theme 对象存在
     const themeConfig = config.theme || {};
@@ -60,7 +106,7 @@ async function getCurrentTheme() {
     
     // 自动模式或跟随系统
     if (themeConfig.followSystem) {
-      // 向所有popup发送查询系统主题的请求
+      // 向所有 popup 发送查询系统主题的请求
       const response = await chrome.runtime.sendMessage({ action: 'getCurrentSystemTheme' });
       return response.theme || 'light';
     }
@@ -80,10 +126,10 @@ async function getCurrentTheme() {
 async function updateThemeConfig(themeConfig) {
   try {
     console.log('[Background] 开始更新主题配置:', themeConfig);
-    const config = await getConfig();
+    const config = await configManager.getConfig();
     console.log('[Background] 更新前的配置:', JSON.stringify(config.theme));
     
-    // 确保theme对象存在
+    // 确保 theme 对象存在
     if (!config.theme) {
       config.theme = {};
     }
@@ -93,11 +139,11 @@ async function updateThemeConfig(themeConfig) {
     console.log('[Background] 合并后的主题配置:', JSON.stringify(config.theme));
     
     // 保存配置
-    await saveConfig(config);
+    await configManager.saveConfig(config);
     console.log('[Background] 配置已保存');
     
     // 验证保存结果
-    const savedConfig = await getConfig();
+    const savedConfig = await configManager.getConfig();
     console.log('[Background] 保存后验证:', JSON.stringify(savedConfig.theme));
     
     // 广播主题变更
@@ -197,45 +243,32 @@ async function handleGetStats() {
 }
 
 /**
- * 初始化Service Worker
+ * 初始化 Service Worker
  */
 async function initialize() {
   console.log('🎯 言之有理插件 Service Worker 已启动');
   
   // 检查并设置默认配置
-  const config = await getConfig();
+  const config = await configManager.getConfig();
   if (!config) {
     await chrome.storage.local.set({ config: DEFAULT_CONFIG });
   }
 }
 
 /**
- * 获取配置
+ * 获取配置（向后兼容别名）
  * @returns {Promise<Object>} 配置对象
  */
 async function getConfig() {
-  console.log('[Background] 开始获取配置');
-  const result = await chrome.storage.local.get('config');
-  console.log('[Background] 从storage读取到的配置:', JSON.stringify(result.config));
-  
-  if (!result.config) {
-    console.log('[Background] 配置不存在，返回默认配置');
-    return DEFAULT_CONFIG;
-  }
-  
-  // 确保配置结构完整
-  const mergedConfig = { ...DEFAULT_CONFIG, ...result.config };
-  console.log('[Background] 合并后的完整配置:', JSON.stringify(mergedConfig, null, 2));
-  
-  return mergedConfig;
+  return await configManager.getConfig();
 }
 
 /**
- * 保存配置
+ * 保存配置（向后兼容别名）
  * @param {Object} config - 配置对象
  */
 async function saveConfig(config) {
-  await chrome.storage.local.set({ config });
+  await configManager.saveConfig(config);
 }
 
 /**
@@ -439,13 +472,13 @@ function createLLMProcessor() {
 }
 
 /**
- * 处理LLM请求
+ * 处理 LLM 请求
  * @param {Object} request - 请求对象
  * @returns {Promise<Object>} 响应对象
  */
 async function handleLLMRequest(request) {
   try {
-    const config = await getConfig();
+    const config = await configManager.getConfig();
     
     // 检查功能是否启用
     if (!config.enabledFeatures[request.type]) {
@@ -558,16 +591,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // 获取配置
   if (request.action === 'getConfig') {
-    getConfig().then(config => {
+    configManager.getConfig().then(config => {
       sendResponse({ success: true, config });
     });
     return true;
   }
-
+  
   // 保存配置
   if (request.action === 'saveConfig') {
-    saveConfig(request.config).then(() => {
-      // 重新初始化LLM处理器
+    configManager.saveConfig(request.config).then(() => {
+      // 重新初始化 LLM 处理器
       llmProcessor = null;
       sendResponse({ success: true });
     });
