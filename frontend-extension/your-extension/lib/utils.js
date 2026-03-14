@@ -112,32 +112,117 @@ class TextUtils {
 }
 
 /**
- * 缓存管理类
+ * 缓存管理类（支持 TTL 和 LRU）
  */
 class CacheManager {
-    constructor() {
+    constructor(maxSize = 100, defaultTTL = 5 * 60 * 1000) {
         this.cache = new Map();
-        this.maxSize = 100;
+        this.maxSize = maxSize;
+        this.defaultTTL = defaultTTL; // 默认 5 分钟
+        this.hits = 0;
+        this.misses = 0;
     }
 
+    /**
+     * 获取缓存值
+     * @param {string} key - 缓存键
+     * @returns {*} 缓存值，如果不存在或已过期则返回 undefined
+     */
     get(key) {
-        return this.cache.get(key);
+        const item = this.cache.get(key);
+        if (!item) {
+            this.misses++;
+            return undefined;
+        }
+        
+        // 检查是否过期
+        if (Date.now() > item.expiry) {
+            this.cache.delete(key);
+            this.misses++;
+            return undefined;
+        }
+        
+        // 更新访问顺序（LRU）
+        this.cache.delete(key);
+        this.cache.set(key, item);
+        this.hits++;
+        return item.value;
     }
 
-    set(key, value) {
+    /**
+     * 设置缓存值
+     * @param {string} key - 缓存键
+     * @param {*} value - 缓存值
+     * @param {number} [ttl] - 可选的 TTL（毫秒），不传则使用默认值
+     */
+    set(key, value, ttl) {
+        // 如果缓存已满，删除最旧的项
         if (this.cache.size >= this.maxSize) {
             const firstKey = this.cache.keys().next().value;
             this.cache.delete(firstKey);
         }
-        this.cache.set(key, value);
+        
+        this.cache.set(key, {
+            value,
+            expiry: Date.now() + (ttl || this.defaultTTL)
+        });
     }
 
+    /**
+     * 检查键是否存在且未过期
+     * @param {string} key - 缓存键
+     * @returns {boolean}
+     */
     has(key) {
-        return this.cache.has(key);
+        const item = this.cache.get(key);
+        if (!item) return false;
+        
+        if (Date.now() > item.expiry) {
+            this.cache.delete(key);
+            return false;
+        }
+        return true;
     }
 
+    /**
+     * 清理所有过期的缓存项
+     * @returns {number} 清理的项目数量
+     */
+    cleanup() {
+        const now = Date.now();
+        let count = 0;
+        for (const [key, item] of this.cache.entries()) {
+            if (now > item.expiry) {
+                this.cache.delete(key);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * 清空缓存
+     */
     clear() {
         this.cache.clear();
+        this.hits = 0;
+        this.misses = 0;
+    }
+
+    /**
+     * 获取缓存统计信息
+     * @returns {Object} 统计信息
+     */
+    getStats() {
+        const total = this.hits + this.misses;
+        return {
+            size: this.cache.size,
+            maxSize: this.maxSize,
+            hits: this.hits,
+            misses: this.misses,
+            hitRate: total > 0 ? (this.hits / total * 100).toFixed(2) : 0,
+            avgTTL: this.defaultTTL
+        };
     }
 }
 
