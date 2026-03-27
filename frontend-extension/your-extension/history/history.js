@@ -298,7 +298,7 @@ function showReanalyzeModal(record) {
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
                 <h2>🔄 重新分析</h2>
-                <button class="close-btn" onclick="closeReanalyzeModal()">✕</button>
+                <button class="close-btn" id="reanalyzeCloseBtn">✕</button>
             </div>
             <div class="modal-body">
                 <div style="margin-bottom: 20px;">
@@ -387,8 +387,11 @@ function showReanalyzeModal(record) {
         });
     });
     
-    // 绑定关闭事件
-    modal.querySelector('.close-btn').addEventListener('click', closeReanalyzeModal);
+    // 绑定关闭事件（使用 ID 选择器）
+    const closeBtn = document.getElementById('reanalyzeCloseBtn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeReanalyzeModal);
+    }
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             closeReanalyzeModal();

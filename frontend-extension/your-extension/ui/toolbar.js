@@ -87,46 +87,54 @@ class FloatingToolbar {
     }
 
     /**
-     * 加载配置
+     * 加载配置（增强版：使用 Promise 确保异步加载）
      */
     async loadConfig() {
-        try {
-            // 默认配置
-            let config = {
-                alwaysShowToolbar: false,
-                theme: 'light'
+        return new Promise((resolve) => {
+            // 设置超时，防止永远等待
+            const timeout = setTimeout(() => {
+                console.warn('[Toolbar] 配置加载超时（2 秒），使用默认值');
+                this.alwaysShow = false;
+                this.setTheme('light');
+                this.configLoaded = true;
+                resolve();
+            }, 2000);
+            
+            // 监听配置响应
+            const handler = (event) => {
+                if (event.data.type === 'YANZHI_YOULI_CONFIG') {
+                    clearTimeout(timeout);
+                    console.log('[Toolbar] 收到配置响应:', event.data.config);
+                    this.updateConfigFromMessage(event.data.config);
+                    window.removeEventListener('message', handler);
+                    resolve();
+                }
             };
             
-            // 由于 toolbar.js 在页面上下文中运行，无法直接访问 chrome.storage
-            // 改为从 content script 请求配置
-            if (window.parent && window.parent !== window) {
-                // 如果在 iframe 中，尝试向父窗口请求配置
-                console.log('[Toolbar] 尝试从父窗口请求配置');
-                window.parent.postMessage({
-                    type: 'YANZHI_YOULI_GET_CONFIG'
-                }, '*');
-                
-                // 等待配置响应（简单实现，实际应用中可能需要更复杂的机制）
-                // 这里我们先使用默认配置，配置会通过 YANZHI_YOULI_CONFIG 消息更新
-            } else {
-                // 直接向 content script 请求配置
-                console.log('[Toolbar] 尝试从 content script 请求配置');
-                window.postMessage({
-                    type: 'YANZHI_YOULI_GET_CONFIG'
-                }, '*');
+            window.addEventListener('message', handler);
+            
+            // 请求配置
+            try {
+                if (window.parent && window.parent !== window) {
+                    // 如果在 iframe 中，尝试向父窗口请求配置
+                    console.log('[Toolbar] 尝试从父窗口请求配置');
+                    window.parent.postMessage({
+                        type: 'YANZHI_YOULI_GET_CONFIG'
+                    }, '*');
+                } else {
+                    // 直接向 content script 请求配置
+                    console.log('[Toolbar] 尝试从 content script 请求配置');
+                    window.postMessage({
+                        type: 'YANZHI_YOULI_GET_CONFIG'
+                    }, '*');
+                }
+            } catch (error) {
+                console.error('[Toolbar] 发送配置请求失败:', error);
+                clearTimeout(timeout);
+                this.configLoaded = true;
+                resolve();
             }
-            
-            // 立即应用默认配置，后续会通过消息更新
-            this.alwaysShow = config.alwaysShowToolbar;
-            this.setTheme(config.theme);
-            this.configLoaded = true;
-            
-            console.log('[Toolbar] 使用初始默认配置:', config);
-            
-        } catch (error) {
-            console.error('[Toolbar] 加载配置失败:', error);
-            this.configLoaded = true;
-        }
+        });
     }
 
     /**
@@ -145,11 +153,11 @@ class FloatingToolbar {
                 console.log('[Toolbar] 收到配置变更消息', event.data.config);
                 this.updateConfigFromMessage(event.data.config);
             }
-            // 新增：监听LLM响应消息
+            // 新增：监听 LLM 响应消息
             else if (event.data.type === 'YANZHI_YOULI_LLM_RESPONSE') {
-                console.log('[Toolbar] 收到LLM响应:', event.data);
+                console.log('[Toolbar] 收到 LLM 响应:', event.data);
                 if (event.data.success && event.data.result) {
-                    // 如果有cardId，更新现有的加载卡片
+                    // 如果有 cardId，更新现有的加载卡片
                     if (event.data.cardId && window.resultCardManager) {
                         // 找到对应的卡片并更新
                         const card = window.resultCardManager.getCardById(event.data.cardId);
@@ -165,10 +173,44 @@ class FloatingToolbar {
                             if (card.resultEl) card.resultEl.style.display = 'block';
                         }
                     } else if (window.resultCardManager) {
-                        // 如果没有cardId，创建新的结果卡片
+                        // 如果没有 cardId，创建新的结果卡片
                         window.resultCardManager.createCard(event.data.result, event.data.action);
                     } else if (window.resultCard) {
                         window.resultCard.show(event.data.result, event.data.action);
+                    }
+                } else if (event.data.error) {
+                    // ⚠️ API 调用失败处理（遵循无降级仅提示策略）
+                    console.warn('[Toolbar] LLM 调用失败:', event.data.error);
+                                
+                    if (event.data.cardId && window.resultCardManager) {
+                        // 找到对应的卡片并显示错误
+                        const card = window.resultCardManager.getCardById(event.data.cardId);
+                        if (card) {
+                            // 停止加载动画
+                            if (card.loadingEl) card.loadingEl.style.display = 'none';
+                                        
+                            // 显示错误提示
+                            if (card.resultEl) {
+                                card.resultEl.style.display = 'block';
+                                card.resultEl.innerHTML = `
+                                    <div style="color: #f44336; padding: 20px; text-align: center;">
+                                        <div style="font-size: 48px; margin-bottom: 10px;">⚠️</div>
+                                        <div style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">调用失败</div>
+                                        <div style="font-size: 14px; color: #666; margin-bottom: 15px;">${event.data.error}</div>
+                                        ${event.data.suggestion ? `<div style="font-size: 13px; color: #999; background: #fff3cd; padding: 10px; border-radius: 6px; border-left: 3px solid #ffc107;">💡 ${event.data.suggestion}</div>` : ''}
+                                        ${event.data.retryable ? `<button onclick="window.toolbar.retryLLMCall('${event.data.cardId}')" style="margin-top: 15px; padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">🔄 重试</button>` : ''}
+                                    </div>
+                                `;
+                            }
+                        }
+                    } else if (window.resultCard) {
+                        // 旧版本的错误处理（兼容）
+                        if (window.resultCard.showError) {
+                            window.resultCard.showError(event.data.error, event.data.suggestion, event.data.retryable);
+                        }
+                    } else {
+                        // 如果没有任何卡片管理器，显示友好提示
+                        alert('AI 调用失败：' + event.data.error + '\n\n' + (event.data.suggestion || '请稍后重试'));
                     }
                 }
             }
@@ -683,7 +725,7 @@ class FloatingToolbar {
     }
 
     /**
-     * 开始拖动
+     * 开始拖动（增强版：添加清理逻辑）
      * @param {MouseEvent} e - 鼠标事件
      */
     startDrag(e) {
@@ -703,12 +745,14 @@ class FloatingToolbar {
         this.toolbar.style.transition = 'none';
         this.toolbar.style.cursor = 'move';
 
-        // 添加全局事件监听器
+        // 添加全局事件监听器（使用 bind 确保可以移除）
         document.addEventListener('mousemove', this.onDrag = this.onDrag.bind(this));
         document.addEventListener('mouseup', this.endDrag = this.endDrag.bind(this));
 
         // 防止文本选择
         document.body.style.userSelect = 'none';
+        
+        console.log('[Toolbar] 开始拖动');
     }
 
     /**
@@ -745,7 +789,7 @@ class FloatingToolbar {
     }
 
     /**
-     * 结束拖动
+     * 结束拖动（增强版：确保清理所有监听器）
      * @param {MouseEvent} e - 鼠标事件
      */
     endDrag(e) {
@@ -758,9 +802,14 @@ class FloatingToolbar {
         this.toolbar.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
         this.toolbar.style.cursor = 'default';
 
-        // 移除全局事件监听器
+        // 关键修复：移除全局事件监听器
         document.removeEventListener('mousemove', this.onDrag);
         document.removeEventListener('mouseup', this.endDrag);
+        
+        // 清除引用，防止内存泄漏
+        this.onDrag = null;
+        this.endDrag = null;
+        
         document.body.style.userSelect = '';
 
         // 保存位置（只有真正拖动过才保存）
@@ -782,6 +831,8 @@ class FloatingToolbar {
         setTimeout(() => {
             this.hasDragged = false;
         }, 100);
+        
+        console.log('[Toolbar] 结束拖动');
     }
 
     /**
@@ -1150,6 +1201,23 @@ class FloatingToolbar {
             setTimeout(() => errorDiv.remove(), 300);
         }, 3000);
     }
+
+    /**
+     * 重试 LLM 调用
+     * @param {string} cardId - 卡片 ID
+     */
+    retryLLMCall(cardId) {
+        console.log('[Toolbar] 重试 LLM 调用，cardId:', cardId);
+        
+        // TODO: 实现重试逻辑（需要缓存原始请求数据）
+        // 目前由于没有保存原始请求数据，暂时显示提示
+        this.showToast('⚠️ 重试功能开发中，请重新选择文本进行操作', 'warning');
+        
+        // 未来实现方案：
+        // 1. 在发起 LLM 请求时，将原始文本和类型缓存到 Map 中
+        // 2. 重试时从 Map 中获取数据重新发起请求
+        // 3. 更新对应卡片的显示状态
+    }
 }
 
 // 暴露 FloatingToolbar 类到全局
@@ -1177,4 +1245,33 @@ if (typeof window !== 'undefined') {
     
     // 暴露 FloatingToolbar 类到全局，供 content-script.js 初始化控制
     window.FloatingToolbar = FloatingToolbar;
+    
+    // 页面卸载前清理所有监听器和资源
+    window.addEventListener('beforeunload', () => {
+        console.log('[Toolbar] 页面卸载，清理资源');
+        
+        if (window.floatingToolbar) {
+            const toolbar = window.floatingToolbar;
+            
+            // 移除拖动监听器
+            if (toolbar.onDrag) {
+                document.removeEventListener('mousemove', toolbar.onDrag);
+                toolbar.onDrag = null;
+            }
+            if (toolbar.endDrag) {
+                document.removeEventListener('mouseup', toolbar.endDrag);
+                toolbar.endDrag = null;
+            }
+            
+            // 断开 MutationObserver（如果有）
+            if (toolbar.observer) {
+                toolbar.observer.disconnect();
+            }
+            
+            // 清空工具栏 DOM
+            if (toolbar.toolbar && toolbar.toolbar.parentNode) {
+                toolbar.toolbar.parentNode.removeChild(toolbar.toolbar);
+            }
+        }
+    });
 }

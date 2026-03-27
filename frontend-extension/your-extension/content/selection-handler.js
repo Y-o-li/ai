@@ -182,7 +182,7 @@
     }
 
     /**
-     * 绑定事件监听器
+     * 绑定事件监听器（增强版：保存引用以便清理）
      */
     function bindEvents() {
         // 鼠标松开时检查选择
@@ -201,23 +201,40 @@
         document.addEventListener('keydown', handleKeyShortcuts);
 
         // 选择变化事件（用于键盘选择）
-        document.addEventListener('selectionchange', () => {
-            clearTimeout(hideTimeout);
-            hideTimeout = setTimeout(handleSelection, 150);
-        });
-
+        document.addEventListener('selectionchange', handleSelectionChange);
+        
         // 滚动和窗口大小变化时隐藏（仅在工具栏显示开关关闭时）
-        window.addEventListener('scroll', () => {
-            if (!(window.floatingToolbar && window.floatingToolbar.alwaysShow)) {
-                hideToolbar();
-            }
-        }, { passive: true });
-        window.addEventListener('resize', () => {
-            if (!(window.floatingToolbar && window.floatingToolbar.alwaysShow)) {
-                hideToolbar();
-            }
-        }, { passive: true });
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('resize', handleResize, { passive: true });
+        
+        console.log('📝 事件监听器已绑定');
     }
+    
+    // 保存监听器引用以便清理
+    const eventListeners = [];
+    
+    function addEventListenerWithCleanup(target, type, listener, options) {
+        target.addEventListener(type, listener, options);
+        eventListeners.push({ target, type, listener });
+    }
+    
+    // 包装原有的事件处理函数，使其可以被移除
+    const handleSelectionChange = () => {
+        clearTimeout(hideTimeout);
+        hideTimeout = setTimeout(handleSelection, 150);
+    };
+    
+    const handleScroll = () => {
+        if (!(window.floatingToolbar && window.floatingToolbar.alwaysShow)) {
+            hideToolbar();
+        }
+    };
+    
+    const handleResize = () => {
+        if (!(window.floatingToolbar && window.floatingToolbar.alwaysShow)) {
+            hideToolbar();
+        }
+    };
 
     /**
      * 处理键盘快捷键
@@ -297,6 +314,30 @@
         console.log('📝 文本选择处理器初始化');
         bindEvents();
     }
+    
+    /**
+     * 清理所有事件监听器（防止内存泄漏）
+     */
+    function cleanup() {
+        console.log('📝 清理事件监听器');
+        
+        // 移除保存的监听器
+        eventListeners.forEach(({ target, type, listener }) => {
+            target.removeEventListener(type, listener);
+        });
+        eventListeners.length = 0;
+        
+        // 清空定时器
+        if (hideTimeout) {
+            clearTimeout(hideTimeout);
+            hideTimeout = null;
+        }
+    }
+    
+    // 页面卸载前清理资源
+    window.addEventListener('beforeunload', () => {
+        cleanup();
+    });
 
     // 等待DOM就绪
     if (document.readyState === 'loading') {

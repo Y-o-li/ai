@@ -461,31 +461,34 @@ function applyThemeToPage(theme) {
         }
     }
 
-    // DOM就绪后初始化
+    // DOM 就绪后初始化（关键修复：确保配置在 UI 组件之前加载）
     async function onReady() {
-        // 配置已在 initialize() 中加载，这里确保全局配置已设置
-        if (!window.yanzhiYouliConfig) {
-        await loadConfig();
-        }
-
-        // 初始化高亮功能
+        // 关键修复：确保配置在工具栏初始化之前加载完成
+        await loadConfig();  // 等待配置真正加载完成
+            
+        console.log('[Content Script] 配置已加载，开始初始化 UI 组件');
+            
+        // 然后才初始化高亮功能
         setTimeout(initHighlight, 500);
-
-        // 初始化选择功能
+    
+        // 初始化选择功能（此时全局配置已设置）
         initSelection();
-
+    
         // 监听动态内容变化
         observeDynamicContent();
-
+            
         // 通过 postMessage 通知 toolbar 配置（确保 toolbar 已初始化）
         setTimeout(() => {
             if (window.yanzhiYouliConfig) {
-            window.postMessage({
-                type: 'YANZHI_YOULI_CONFIG',
-                config: window.yanzhiYouliConfig
-            }, '*');
+                window.postMessage({
+                    type: 'YANZHI_YOULI_CONFIG',
+                    config: window.yanzhiYouliConfig
+                }, '*');
+                console.log('[Content Script] 已发送配置通知:', window.yanzhiYouliConfig);
             }
-        }, 300);
+        }, 100);  // 缩短延迟，确保尽快通知
+            
+        console.log('[Content Script] 初始化完成');
     }
 
     // 加载配置
@@ -506,38 +509,75 @@ function applyThemeToPage(theme) {
         }
     }
 
-    // 监听动态加载的内容
+    // 监听动态加载的内容（优化版：批量处理 + 防抖）
     function observeDynamicContent() {
         let debounceTimer;
+        const pendingNodes = new Set();  // 收集待检测节点
+        const PROCESS_DELAY = 500;  // 防抖延迟（毫秒）
+        
         const observer = new MutationObserver((mutations) => {
-            // 检查是否有新增文本节点
-            const hasNewContent = mutations.some(mutation => {
-                return Array.from(mutation.addedNodes).some(node => {
-                    return node.nodeType === Node.ELEMENT_NODE ||
-                           (node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+            // 只收集节点，不立即处理
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    // 只检测可见的元素节点或有文本的节点
+                    if (node.nodeType === Node.ELEMENT_NODE && node.offsetWidth > 0) {
+                        pendingNodes.add(node);
+                    } else if (node.nodeType === Node.TEXT_NODE && 
+                               node.textContent.trim() && 
+                               CONFIG.highlightEnabled) {
+                        pendingNodes.add(node);
+                    }
                 });
             });
-
-            if (hasNewContent && CONFIG.highlightEnabled) {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    // 只检测新增的内容
-                    mutations.forEach(mutation => {
-                        mutation.addedNodes.forEach(node => {
-                            // 对所有类型的节点使用 scanElement
+            
+            // 批量处理收集的节点
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                processPendingNodes();
+            }, PROCESS_DELAY);
+        });
+        
+        function processPendingNodes() {
+            if (pendingNodes.size === 0) return;
+            
+            const nodesArray = Array.from(pendingNodes);
+            pendingNodes.clear();
+            
+            // 使用 requestIdleCallback 分批处理，避免阻塞主线程
+            let index = 0;
+            const BATCH_SIZE = 20;  // 每批处理 20 个节点
+            
+            function processBatch(deadline) {
+                while (deadline.timeRemaining() > 50 && index < nodesArray.length) {
+                    // 每次处理一小批
+                    for (let i = 0; i < BATCH_SIZE && index < nodesArray.length; i++, index++) {
+                        const node = nodesArray[index];
+                        // 确保节点仍在 DOM 中
+                        if (document.contains(node)) {
                             if (node.nodeType === Node.ELEMENT_NODE) {
                                 scanElement(node);
+                            } else if (node.nodeType === Node.TEXT_NODE) {
+                                detectNode(node);
                             }
-                        });
-                    });
-                }, 1000);
+                        }
+                    }
+                }
+                
+                // 如果还有剩余节点，继续处理
+                if (index < nodesArray.length) {
+                    requestIdleCallback(processBatch, { timeout: 1000 });
+                }
             }
-        });
-
+            
+            requestIdleCallback(processBatch, { timeout: 1000 });
+        }
+        
         observer.observe(document.body, {
             childList: true,
             subtree: true
         });
+        
+        console.log('✅ 动态内容监听器已启动（优化版）');
     }
 
     // 扫描单个元素

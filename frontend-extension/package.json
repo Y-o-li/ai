@@ -37,6 +37,6 @@
     "chrome": ">=88.0.0"
   },
   "manifest": {
-    "version": 3
+    "version": "1.3"
   }
 }

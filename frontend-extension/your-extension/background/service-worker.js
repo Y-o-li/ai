@@ -472,7 +472,7 @@ function createLLMProcessor() {
 }
 
 /**
- * 处理 LLM 请求
+ * 处理 LLM 请求（增强版：带降级策略和超时控制）
  * @param {Object} request - 请求对象
  * @returns {Promise<Object>} 响应对象
  */
@@ -488,11 +488,12 @@ async function handleLLMRequest(request) {
       };
     }
 
-    // 检查API Key
+    // 检查 API Key
     if (!config.apiKey) {
+      console.warn('⚠️ API Key 未配置');
       return { 
         success: false, 
-        error: 'API Key未配置，请先进入插件设置页面配置' 
+        error: 'API Key 未配置，请先进入插件设置页面配置' 
       };
     }
 
@@ -504,8 +505,16 @@ async function handleLLMRequest(request) {
       });
     }
 
-    // 处理请求
-    const result = await llmProcessor.process(request.type, request.text);
+    // 添加超时控制（30 秒）
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('请求超时，请检查网络连接')), 30000);
+    });
+    
+    // 使用 Promise.race 实现超时
+    const result = await Promise.race([
+      llmProcessor.process(request.type, request.text),
+      timeoutPromise
+    ]);
 
     // 更新统计
     await updateStats(request.type, request.text, result || '');
@@ -519,11 +528,72 @@ async function handleLLMRequest(request) {
 
     return { success: true, result };
   } catch (error) {
-    console.error('LLM处理失败:', error);
+    console.error('LLM 处理失败:', error);
+    
+    // 记录失败到存储（用于调试和分析）
+    await logFailedRequest(request, error).catch(err => {
+      console.warn('记录失败日志失败:', err);
+    });
+    
+    // 根据错误类型返回明确的错误信息
+    if (error.message.includes('API Key') || 
+        error.message.includes('认证') || 
+        error.message.includes('授权')) {
+      return { 
+        success: false, 
+        error: 'API Key 无效或已过期，请检查配置',
+        retryable: false,
+        suggestion: '请在设置页面重新配置有效的 API Key'
+      };
+    }
+    
+    if (error.message.includes('网络') || 
+        error.message.includes('超时') || 
+        error.message.includes('fetch')) {
+      return { 
+        success: false, 
+        error: '网络连接失败，请稍后重试',
+        retryable: true,
+        suggestion: '请检查网络连接状态'
+      };
+    }
+    
     return { 
       success: false, 
-      error: error.message || '处理失败，请检查网络连接和API配置' 
+      error: error.message || '服务暂时不可用，请稍后重试',
+      retryable: true
     };
+  }
+}
+
+/**
+ * 记录失败的请求到存储
+ * @param {Object} request - 请求对象
+ * @param {Error} error - 错误对象
+ */
+async function logFailedRequest(request, error) {
+  try {
+    const failedLogs = await chrome.storage.local.get('failedRequests') || { failedRequests: [] };
+    const log = {
+      timestamp: Date.now(),
+      date: new Date().toISOString().split('T')[0],
+      type: request.type,
+      text: request.text.substring(0, 200),
+      error: error.message,
+      stack: error.stack
+    };
+    
+    failedLogs.failedRequests.unshift(log);
+    
+    // 只保留最近 100 条失败记录
+    if (failedLogs.failedRequests.length > 100) {
+      failedLogs.failedRequests = failedLogs.failedRequests.slice(0, 100);
+    }
+    
+    await chrome.storage.local.set(failedLogs);
+    console.log('📝 失败请求已记录');
+  } catch (err) {
+    console.warn('记录失败日志失败:', err);
   }
 }
 

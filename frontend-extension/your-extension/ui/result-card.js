@@ -645,25 +645,56 @@ class ResultCard {
     }
 
     /**
+     * 显示错误信息
+     * @param {string} error - 错误信息
+     * @param {string} [suggestion] - 建议操作（可选）
+     * @param {boolean} [retryable] - 是否可重试（可选）
+     */
+    showError(error, suggestion = '', retryable = false) {
+        const config = this.typeConfig[this.currentType];
+        
+        // 隐藏加载
+        if (this.loadingEl) this.loadingEl.style.display = 'none';
+        
+        // 显示错误内容
+        if (this.resultEl) {
+            this.resultEl.style.display = 'block';
+            this.resultEl.innerHTML = `
+                <div style="color: #f44336; padding: 20px; text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">⚠️</div>
+                    <div style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">调用失败</div>
+                    <div style="font-size: 14px; color: #666; margin-bottom: 15px;">${error}</div>
+                    ${suggestion ? `<div style="font-size: 13px; color: #999; background: #fff3cd; padding: 10px; border-radius: 6px; border-left: 3px solid #ffc107;">💡 ${suggestion}</div>` : ''}
+                    ${retryable ? `<button onclick="if (window.toolbar && window.toolbar.retryLLMCall) { window.toolbar.retryLLMCall('${this.id}') }" style="margin-top: 15px; padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">🔄 重试</button>` : ''}
+                </div>
+            `;
+        }
+        
+        // 显示卡片
+        this.card.style.display = 'flex';
+        this.isVisible = true;
+    }
+
+    /**
      * 格式化结果显示
      * @param {string} result - 原始结果
      * @param {string} type - 处理类型
-     * @returns {string} 格式化后的HTML
+     * @returns {string} 格式化后的 HTML
      */
     formatResult(result, type) {
-        // 检查是否是JSON格式
+        // 检查是否是 JSON 格式
         let processedResult = result;
         try {
             const parsed = JSON.parse(result);
-            // 如果是JSON，转换为更友好的格式
+            // 如果是 JSON，转换为更友好的格式
             if (typeof parsed === 'object' && parsed !== null) {
                 processedResult = this.formatJSONResult(parsed, type);
             }
         } catch (e) {
-            // 不是JSON，保持原样
+            // 不是 JSON，保持原样
         }
 
-        // 简单的Markdown格式转换
+        // 简单的 Markdown 格式转换
         let formatted = processedResult
             .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1976D2;">$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -674,7 +705,7 @@ class ResultCard {
         if (type === 'factCheck') {
             // 可信度高亮
             formatted = formatted.replace(
-                /(可信度[：:]\s*)(\d+%?)/g,
+                /(可信度 [：:]\s*)(\d+%?)/g,
                 '$1<span style="color: #4CAF50; font-weight: bold;">$2</span>'
             );
         }

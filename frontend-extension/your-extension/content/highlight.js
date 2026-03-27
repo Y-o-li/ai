@@ -774,7 +774,7 @@ class SensitiveWordDetector {
 const detector = new SensitiveWordDetector();
 
 /**
- * 扫描并高亮页面中的煽动性内容（优化版：批量处理）
+ * 扫描并高亮页面中的煽动性内容（优化版：分批处理 + 时间切片）
  */
 async function scanAndHighlight() {
     // 确保词库已加载
@@ -783,7 +783,7 @@ async function scanAndHighlight() {
         if (!loaded) return;
     }
 
-    // 获取所有文本节点
+    // 获取所有文本节点（限制最大数量，优先可视区域）
     const walker = document.createTreeWalker(
         document.body,
         NodeFilter.SHOW_TEXT,
@@ -814,32 +814,42 @@ async function scanAndHighlight() {
 
     const nodesToProcess = [];
     let node;
+    const MAX_VISIBLE_NODES = 300;  // 先处理可视区域的 300 个节点
+    const viewportHeight = window.innerHeight;
+    let visibleCount = 0;
     
+    // 第一批：只收集可视区域内的节点
     while (node = walker.nextNode()) {
+        if (visibleCount >= MAX_VISIBLE_NODES) break;
+        
         if (node.textContent.trim().length >= detector.config.minTextLength) {
-            nodesToProcess.push(node);
+            const rect = node.parentElement?.getBoundingClientRect();
+            // 检查是否在可视区域内
+            if (rect && rect.top < viewportHeight && rect.bottom > 0) {
+                nodesToProcess.push(node);
+                visibleCount++;
+            } else if (!rect) {
+                // 没有 rect 的也加入（可能在文档流中）
+                nodesToProcess.push(node);
+            }
         }
     }
 
-    console.log(`🔍 开始检测 ${nodesToProcess.length} 个文本节点...`);
+    console.log(`🔍 开始检测 ${nodesToProcess.length} 个可视区域文本节点...`);
     let detectedCount = 0;
     let cacheHitCount = 0;
 
-    // 优化 1: 批量处理节点（使用 requestIdleCallback 避免阻塞）
-    const batchSize = detector.config.batchProcessSize;
+    // 优化 1: 使用时间切片分批处理节点
     let currentIndex = 0;
-
-    function processBatch() {
+    const BATCH_PROCESS_TIME = 50;  // 每批最多使用 50ms
+    
+    function processBatchWithTimeSlicing(deadline) {
         const startTime = performance.now();
         
-        while (currentIndex < nodesToProcess.length) {
-            // 检查是否超过当前批次大小
-            if (currentIndex % batchSize === 0 && currentIndex > 0) {
-                // 让出主线程，避免阻塞
-                requestIdleCallback(processBatch, { timeout: 100 });
-                return;
-            }
-
+        while (currentIndex < nodesToProcess.length && 
+               deadline.timeRemaining() > 0 &&
+               (performance.now() - startTime) < BATCH_PROCESS_TIME) {
+            
             const textNode = nodesToProcess[currentIndex];
             const text = textNode.textContent;
             
@@ -868,21 +878,96 @@ async function scanAndHighlight() {
             currentIndex++;
         }
 
-        // 完成所有处理
-        const endTime = performance.now();
-        const duration = endTime - startTime;
-        
-        console.log(`✅ 检测完成，发现 ${detectedCount} 处煽动性内容`);
-        console.log(`📊 缓存命中率：${(cacheHitCount / nodesToProcess.length * 100).toFixed(2)}%`);
-        console.log(`⏱️ 总耗时：${duration.toFixed(2)}ms`);
-        
-        // 输出缓存统计
-        const stats = detector.cache.getStats();
-        console.log(`💾 缓存状态：${stats.size}/${stats.maxSize}, 命中率：${stats.hitRate}%`);
+        // 如果还有剩余节点，继续下一批
+        if (currentIndex < nodesToProcess.length) {
+            requestIdleCallback(processBatchWithTimeSlicing, { timeout: 2000 });
+        } else {
+            // 完成所有处理
+            console.log(`✅ 可视区域检测完成，发现 ${detectedCount} 处煽动性内容`);
+            console.log(`📊 缓存命中率：${(cacheHitCount / nodesToProcess.length * 100).toFixed(2)}%`);
+            
+            // 输出缓存统计
+            const stats = detector.cache.getStats();
+            console.log(`💾 缓存状态：${stats.size}/${stats.maxSize}, 命中率：${stats.hitRate}%`);
+            
+            // 第二批：懒加载处理其他节点
+            setupLazyScanningForRemaining();
+        }
     }
 
-    // 开始第一批处理
-    requestIdleCallback(processBatch, { timeout: 1000 });
+    // 开始第一批处理（使用 requestIdleCallback）
+    requestIdleCallback(processBatchWithTimeSlicing, { timeout: 1000 });
+    
+    // 设置剩余节点的懒加载扫描
+    function setupLazyScanningForRemaining() {
+        const remainingWalker = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    if (!node.textContent.trim()) return NodeFilter.FILTER_REJECT;
+                    const parent = node.parentElement;
+                    if (parent && (parent.classList.contains('yz-highlighted') || 
+                        parent.classList.contains('inciting-text'))) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    if (parent && (parent.tagName === 'SCRIPT' || 
+                        parent.tagName === 'STYLE' ||
+                        parent.tagName === 'NOSCRIPT')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+        
+        const lazyNodes = [];
+        while (node = remainingWalker.nextNode()) {
+            // 跳过已经处理的节点
+            if (!nodesToProcess.includes(node) && 
+                node.textContent.trim().length >= detector.config.minTextLength) {
+                lazyNodes.push(node);
+            }
+        }
+        
+        if (lazyNodes.length > 0) {
+            console.log(`⏳ 设置 ${lazyNodes.length} 个节点的懒加载检测`);
+            
+            // 使用 IntersectionObserver 实现懒加载
+            const lazyObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const node = entry.target;
+                        const text = node.textContent;
+                        
+                        if (text.trim().length >= detector.config.minTextLength) {
+                            const parent = node.parentElement;
+                            const options = {
+                                isInQuote: parent?.closest('blockquote') !== null,
+                                isInEditable: TextUtils.isInEditableArea(node),
+                                parentTag: parent?.tagName || 'TEXT'
+                            };
+                            
+                            const result = detector.detect(text, options);
+                            if (result.isInciting) {
+                                detector.highlight(node, result);
+                            }
+                        }
+                        
+                        // 停止观察此节点
+                        lazyObserver.unobserve(node);
+                    }
+                });
+            }, { rootMargin: '100px' });  // 提前 100px 加载
+            
+            lazyNodes.forEach(node => {
+                if (node.parentElement) {
+                    lazyObserver.observe(node.parentElement);
+                }
+            });
+        }
+    }
 }
 
 /**
