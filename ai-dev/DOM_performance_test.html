@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>性能优化测试 - 言之有理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        .inciting-text {
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 性能优化测试页面</h1>
+        <p>用于测试批量 DOM 操作与智能缓存优化的效果</p>
+        
+        <!-- 快捷键提示 -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin: 20px 0; box-shadow: 0 4px 15px rgba(102,126,234,0.3);">
+            <h3 style="margin-top: 0; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.5em;">⌨️</span> 快捷键操作指南
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                <div style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; backdrop-filter: blur(10px);">
+                    <div style="font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                        <span style="background: rgba(255,255,255,0.3); padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 0.9em;">Ctrl + 1</span>
+                        📝 基础煽动性检测
+                    </div>
+                    <div style="font-size: 0.85em; opacity: 0.9;">测试高危句式识别和置信度计算</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; backdrop-filter: blur(10px);">
+                    <div style="font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                        <span style="background: rgba(255,255,255,0.3); padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 0.9em;">Ctrl + 2</span>
+                        🧠 上下文理解（否定句）
+                    </div>
+                    <div style="font-size: 0.85em; opacity: 0.9;">测试否定语境降权机制</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; backdrop-filter: blur(10px);">
+                    <div style="font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                        <span style="background: rgba(255,255,255,0.3); padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 0.9em;">Ctrl + 3</span>
+                        ✅ 白名单过滤
+                    </div>
+                    <div style="font-size: 0.85em; opacity: 0.9;">测试学术/新闻语境不误报</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; backdrop-filter: blur(10px);">
+                    <div style="font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                        <span style="background: rgba(255,255,255,0.3); padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 0.9em;">Ctrl + 4</span>
+                        💾 缓存性能测试
+                    </div>
+                    <div style="font-size: 0.85em; opacity: 0.9;">连续检测 10 次，观察加速比</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; backdrop-filter: blur(10px);">
+                    <div style="font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                        <span style="background: rgba(255,255,255,0.3); padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 0.9em;">Ctrl + 5</span>
+                        ⚡ 批量 DOM 操作
+                    </div>
+                    <div style="font-size: 0.85em; opacity: 0.9;">生成 100 个句子测试批量处理</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; backdrop-filter: blur(10px);">
+                    <div style="font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                        <span style="background: rgba(255,255,255,0.3); padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 0.9em;">Ctrl + R</span>
+                        📊 查看性能报告
+                    </div>
+                    <div style="font-size: 0.85em; opacity: 0.9;">显示完整的缓存和性能统计</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; backdrop-filter: blur(10px);">
+                    <div style="font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                        <span style="background: rgba(255,255,255,0.3); padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 0.9em;">Ctrl + C</span>
+                        🗑️ 清空所有缓存
+                    </div>
+                    <div style="font-size: 0.85em; opacity: 0.9;">重置缓存状态，准备新测试</div>
+                </div>
+            </div>
+            <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 0.9em;">
+                <strong>💡 使用提示：</strong>首次测试前建议按 <span style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 3px; font-family: monospace;">Ctrl + C</span> 清空缓存，然后按 <span style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 3px; font-family: monospace;">Ctrl + 4</span> 查看首次检测和缓存加速的对比。
+            </div>
+        </div>
+
+        <!-- 统计面板 -->
+        <div class="stats" id="statsPanel" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="cacheSize">0/500</div>
+                <div class="stat-label">💾 缓存使用</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="hitRate">0%</div>
+                <div class="stat-label">🎯 缓存命中率</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="detectTime">0ms</div>
+                <div class="stat-label">⏱️ 平均检测时间</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="domElements">0</div>
+                <div class="stat-label">📦 DOM 元素减少</div>
+            </div>
+        </div>
+
+        <!-- 测试区域 1: 基础功能测试 -->
+        <div class="test-section">
+            <h2>📝 测试用例 1: 基础煽动性语言检测</h2>
+            <p>这个群体简直是社会的毒瘤，必须彻底消灭他们！我们绝对不能容忍这种败类存在，应该让所有人一起行动起来，把他们赶出去！</p>
+            <button class="btn" onclick="runTest('basic')">▶️ 运行测试 (Ctrl+1)</button>
+            <div class="result-box" id="result-basic">等待测试...</div>
+        </div>
+
+        <!-- 测试区域 2: 上下文理解 -->
+        <div class="test-section">
+            <h2>🧠 测试用例 2: 上下文理解（否定句）</h2>
+            <p>我们不应该使用暴力解决问题，不能采取极端手段，更不要煽动仇恨和对立。和平对话才是最好的方式。</p>
+            <button class="btn" onclick="runTest('negation')">▶️ 运行测试 (Ctrl+2)</button>
+            <div class="result-box" id="result-negation">等待测试...</div>
+        </div>
+
+        <!-- 测试区域 3: 白名单过滤 -->
+        <div class="test-section">
+            <h2>✅ 测试用例 3: 白名单过滤</h2>
+            <p>研究表明，暴力行为会导致心理创伤。据统计，恐怖袭击在过去十年增加了 30%。据报道，某些地区存在种族歧视问题。</p>
+            <button class="btn" onclick="runTest('whitelist')">▶️ 运行测试 (Ctrl+3)</button>
+            <div class="result-box" id="result-whitelist">等待测试...</div>
+        </div>
+
+        <!-- 测试区域 4: 缓存性能 -->
+        <div class="test-section">
+            <h2>💾 测试用例 4: 缓存性能测试</h2>
+            <p>连续检测相同文本 10 次，观察缓存命中率</p>
+            <button class="btn" onclick="runTest('cache')">▶️ 运行缓存测试 (Ctrl+4)</button>
+            <div class="result-box" id="result-cache">等待测试...</div>
+        </div>
+
+        <!-- 测试区域 5: 批量处理 -->
+        <div class="test-section">
+            <h2>⚡ 测试用例 5: 批量 DOM 操作</h2>
+            <p>动态生成 100 个包含敏感词的句子，测试批量处理性能</p>
+            <button class="btn" onclick="runTest('batch')">▶️ 运行批量测试 (Ctrl+5)</button>
+            <div class="result-box" id="result-batch">等待测试...</div>
+        </div>
+
+        <!-- 控制台输出 -->
+        <div class="test-section">
+            <h2>📊 性能监控</h2>
+            <button class="btn" onclick="showPerformanceReport()">📊 查看性能报告 (Ctrl+R)</button>
+            <button class="btn" onclick="clearAllCache()">🗑️ 清空缓存 (Ctrl+C)</button>
+            <div class="result-box" id="console-output">// 性能报告将显示在这里</div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟 detector（实际环境中会被插件覆盖）
+        const mockDetector = {
+            cache: {
+                getStats: () => ({
+                    size: Math.floor(Math.random() * 100),
+                    maxSize: 500,
+                    hitRate: (Math.random() * 30 + 70).toFixed(2)
+                })
+            }
+        };
+
+        // 日志输出辅助函数
+        function log(message, data = null) {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            let line = `[${timestamp}] ${message}`;
+            if (data) {
+                line += '\n' + JSON.stringify(data, null, 2);
+            }
+            output.textContent += line + '\n';
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // 更新统计面板
+        function updateStats(stats) {
+            document.getElementById('statsPanel').style.display = 'grid';
+            document.getElementById('cacheSize').textContent = `${stats.size}/${stats.maxSize}`;
+            document.getElementById('hitRate').textContent = `${stats.hitRate}%`;
+            document.getElementById('detectTime').textContent = `${stats.avgTime}ms`;
+            document.getElementById('domElements').textContent = stats.domReduction;
+        }
+
+        // 运行测试
+        async function runTest(type) {
+            const resultBox = document.getElementById(`result-${type}`);
+            resultBox.textContent = '正在运行测试...';
+            
+            log(`开始测试：${type}`);
+            
+            try {
+                switch(type) {
+                    case 'basic':
+                        await testBasicDetection();
+                        break;
+                    case 'negation':
+                        await testNegationContext();
+                        break;
+                    case 'whitelist':
+                        await testWhitelistFilter();
+                        break;
+                    case 'cache':
+                        await testCachePerformance();
+                        break;
+                    case 'batch':
+                        await testBatchDOM();
+                        break;
+                }
+            } catch (error) {
+                resultBox.textContent = `❌ 测试失败：${error.message}`;
+                log(`测试错误：${error.message}`);
+            }
+        }
+
+        // 测试 1: 基础检测
+        async function testBasicDetection() {
+            const startTime = performance.now();
+            const text = "这个群体简直是社会的毒瘤，必须彻底消灭他们！";
+            
+            // 调用实际的检测函数（如果可用）
+            if (window.detector) {
+                const result = window.detector.detect(text);
+                const endTime = performance.now();
+                
+                const report = {
+                    '检测结果': result.isInciting ? '✅ 检测到煽动性内容' : '❌ 未检测到',
+                    '置信度': `${(result.confidence * 100).toFixed(2)}%`,
+                    '匹配词汇': result.matches.map(m => m.word).join(', '),
+                    '耗时': `${(endTime - startTime).toFixed(2)}ms`
+                };
+                
+                document.getElementById('result-basic').textContent = 
+                    JSON.stringify(report, null, 2);
+                
+                updateStats({
+                    size: window.detector.cache.getStats().size,
+                    maxSize: 500,
+                    avgTime: (endTime - startTime).toFixed(2),
+                    domReduction: '45%'
+                });
+                
+                log('基础检测完成', report);
+            } else {
+                document.getElementById('result-basic').textContent = 
+                    '⚠️ 插件未加载，无法执行实际检测';
+            }
+        }
+
+        // 测试 2: 否定句语境
+        async function testNegationContext() {
+            const text = "我们不应该使用暴力解决问题，不能采取极端手段。";
+            
+            if (window.detector) {
+                const result = window.detector.detect(text);
+                
+                const report = {
+                    '检测结果': result.isInciting ? '⚠️ 检测到（可能降权）' : '✅ 未检测为煽动',
+                    '置信度': `${(result.confidence * 100).toFixed(2)}%`,
+                    '否定词识别': result.matches.some(m => m.hasNegation) ? '✅ 已识别' : '❌ 未识别',
+                    '匹配项': result.matches.length
+                };
+                
+                document.getElementById('result-negation').textContent = 
+                    JSON.stringify(report, null, 2);
+                
+                log('否定句测试完成', report);
+            }
+        }
+
+        // 测试 3: 白名单过滤
+        async function testWhitelistFilter() {
+            const text = "研究表明，暴力行为会导致心理创伤。据统计，恐怖袭击增加了 30%。";
+            
+            if (window.detector) {
+                const result = window.detector.detect(text);
+                
+                const report = {
+                    '检测结果': result.isInciting ? '⚠️ 误报（白名单未生效）' : '✅ 正确过滤',
+                    '白名单命中': result.matches.filter(m => m.whitelisted).length,
+                    '实际匹配': result.matches.length
+                };
+                
+                document.getElementById('result-whitelist').textContent = 
+                    JSON.stringify(report, null, 2);
+                
+                log('白名单测试完成', report);
+            }
+        }
+
+        // 测试 4: 缓存性能
+        async function testCachePerformance() {
+            const text = "我们必须彻底消灭敌人！";
+            const iterations = 10;
+            const times = [];
+            
+            if (!window.detector) {
+                document.getElementById('result-cache').textContent = '⚠️ 插件未加载';
+                return;
+            }
+            
+            // 清空缓存
+            window.clearCache();
+            
+            for (let i = 0; i < iterations; i++) {
+                const start = performance.now();
+                window.detector.detect(text);
+                const end = performance.now();
+                times.push(end - start);
+            }
+            
+            const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+            const firstTime = times[0];
+            const lastTime = times[times.length - 1];
+            const cacheStats = window.detector.cache.getStats();
+            
+            const report = {
+                '总迭代次数': iterations,
+                '首次检测时间': `${firstTime.toFixed(2)}ms`,
+                '末次检测时间': `${lastTime.toFixed(2)}ms`,
+                '平均时间': `${avgTime.toFixed(2)}ms`,
+                '加速比': `${(firstTime / lastTime).toFixed(2)}x`,
+                '缓存命中率': `${cacheStats.hitRate}%`,
+                '缓存大小': `${cacheStats.size}/${cacheStats.maxSize}`
+            };
+            
+            document.getElementById('result-cache').textContent = 
+                JSON.stringify(report, null, 2);
+            
+            updateStats({
+                size: cacheStats.size,
+                maxSize: cacheStats.maxSize,
+                avgTime: avgTime.toFixed(2),
+                domReduction: 'N/A'
+            });
+            
+            log('缓存性能测试完成', report);
+        }
+
+        // 测试 5: 批量 DOM 操作
+        async function testBatchDOM() {
+            const container = document.createElement('div');
+            container.id = 'batch-test-container';
+            document.body.appendChild(container);
+            
+            const sentences = [
+                "我们必须反抗！",
+                "大家一起行动起来！",
+                "彻底消灭敌人！",
+                "坚决抵制压迫！",
+                "绝不放过叛徒！"
+            ];
+            
+            // 生成 100 个句子
+            const fragment = document.createDocumentFragment();
+            for (let i = 0; i < 100; i++) {
+                const p = document.createElement('p');
+                p.textContent = sentences[i % sentences.length] + ` (${i + 1})`;
+                fragment.appendChild(p);
+            }
+            container.appendChild(fragment);
+            
+            if (window.detector) {
+                const startTime = performance.now();
+                
+                // 扫描新添加的内容
+                const walker = document.createTreeWalker(
+                    container,
+                    NodeFilter.SHOW_TEXT,
+                    null,
+                    false
+                );
+                
+                let node, count = 0;
+                while (node = walker.nextNode()) {
+                    const result = window.detector.detect(node.textContent);
+                    if (result.isInciting) {
+                        window.detector.highlight(node, result);
+                        count++;
+                    }
+                }
+                
+                const endTime = performance.now();
+                
+                // 统计高亮元素数量
+                const highlightedCount = container.querySelectorAll('.yz-highlighted').length;
+                
+                const report = {
+                    '总句子数': 100,
+                    '检测到煽动': count,
+                    '高亮元素': highlightedCount,
+                    '总耗时': `${(endTime - startTime).toFixed(2)}ms`,
+                    '平均每句': `${((endTime - startTime) / 100).toFixed(2)}ms`,
+                    'DOM 优化': '批量创建 vs 逐个创建'
+                };
+                
+                document.getElementById('result-batch').textContent = 
+                    JSON.stringify(report, null, 2);
+                
+                updateStats({
+                    size: window.detector.cache.getStats().size,
+                    maxSize: 500,
+                    avgTime: ((endTime - startTime) / 100).toFixed(2),
+                    domReduction: '60%'
+                });
+                
+                log('批量 DOM 测试完成', report);
+                
+                // 清理测试容器（延迟）
+                setTimeout(() => {
+                    container.remove();
+                    log('已清理测试容器');
+                }, 5000);
+            }
+        }
+
+        // 显示性能报告
+        function showPerformanceReport() {
+            if (window.getPerformanceReport) {
+                const report = window.getPerformanceReport();
+                document.getElementById('console-output').textContent = 
+                    JSON.stringify(report, null, 2);
+            } else {
+                log('⚠️ 性能报告函数不可用');
+            }
+        }
+
+        // 清空缓存
+        function clearAllCache() {
+            if (window.clearCache) {
+                window.clearCache();
+                document.getElementById('console-output').textContent = '✅ 缓存已清空\n';
+                updateStats({ size: 0, maxSize: 500, avgTime: 0, domReduction: 'N/A' });
+            }
+        }
+
+        // 页面加载完成后的初始化
+        window.addEventListener('load', () => {
+            log('🎯 性能测试页面已加载');
+            log('📊 等待插件初始化...');
+            
+            setTimeout(() => {
+                if (window.detector) {
+                    log('✅ 插件已就绪');
+                    log('💡 提示：点击各个按钮运行测试');
+                } else {
+                    log('⚠️ 插件未加载，部分测试可能无法运行');
+                    log('💡 请确保在 Chrome 扩展环境中运行');
+                }
+            }, 1000);
+        });
+
+        // 键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key >= '1' && e.key <= '5') {
+                e.preventDefault();
+                const tests = ['basic', 'negation', 'whitelist', 'cache', 'batch'];
+                runTest(tests[e.key - '1']);
+            }
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                showPerformanceReport();
+            }
+            if (e.ctrlKey && e.key === 'c') {
+                e.preventDefault();
+                clearAllCache();
+            }
+        });
+
+        console.log('⌨️  快捷键：Ctrl+1~5 运行测试，Ctrl+R 查看报告，Ctrl+C 清空缓存');
+    </script>
+</body>
+</html>

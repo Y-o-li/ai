@@ -1,0 +1,377 @@
+/* =============================================================================
+   扩展全局样式
+   =============================================================================
+   描述: 高亮、工具栏、结果卡片等组件的样式，支持亮色/暗色主题自动切换
+   ============================================================================= */
+
+:root {
+  /* 亮色主题变量 */
+  --yz-bg-primary: #ffffff;
+  --yz-bg-secondary: #f8f9fa;
+  --yz-bg-tertiary: #e9ecef;
+  --yz-text-primary: #212529;
+  --yz-text-secondary: #6c757d;
+  --yz-text-muted: #adb5bd;
+  --yz-border-color: #dee2e6;
+  --yz-shadow-light: rgba(0, 0, 0, 0.1);
+  --yz-shadow-medium: rgba(0, 0, 0, 0.15);
+  --yz-shadow-heavy: rgba(0, 0, 0, 0.3);
+  --yz-overlay-bg: rgba(0, 0, 0, 0.5);
+  --yz-hover-bg: rgba(0, 0, 0, 0.05);
+  --yz-input-bg: #ffffff;
+  --yz-button-bg: #f8f9fa;
+  --yz-button-hover: #e9ecef;
+  --yz-success: #28a745;
+  --yz-warning: #ffc107;
+  --yz-danger: #dc3545;
+  --yz-info: #17a2b8;
+  
+  /* 统一圆角设计 - v1.3.0 新增 */
+  --yz-border-radius-sm: 8px;
+  --yz-border-radius-md: 12px;  /* 推荐使用 */
+  --yz-border-radius-lg: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 暗色主题变量 */
+    --yz-bg-primary: #1e1e1e;
+    --yz-bg-secondary: #2d2d2d;
+    --yz-bg-tertiary: #404040;
+    --yz-text-primary: #e0e0e0;
+    --yz-text-secondary: #a0a0a0;
+    --yz-text-muted: #6c6c6c;
+    --yz-border-color: #404040;
+    --yz-shadow-light: rgba(0, 0, 0, 0.3);
+    --yz-shadow-medium: rgba(0, 0, 0, 0.4);
+    --yz-shadow-heavy: rgba(0, 0, 0, 0.6);
+    --yz-overlay-bg: rgba(0, 0, 0, 0.7);
+    --yz-hover-bg: rgba(255, 255, 255, 0.1);
+    --yz-input-bg: #2d2d2d;
+    --yz-button-bg: #404040;
+    --yz-button-hover: #505050;
+    --yz-success: #4caf50;
+    --yz-warning: #ff9800;
+    --yz-danger: #f44336;
+    --yz-info: #00bcd4;
+  }
+}
+
+/* 暗色主题类 */
+.yz-dark-theme {
+  --yz-bg-primary: #1e1e1e;
+  --yz-bg-secondary: #2d2d2d;
+  --yz-bg-tertiary: #404040;
+  --yz-text-primary: #e0e0e0;
+  --yz-text-secondary: #a0a0a0;
+  --yz-text-muted: #6c6c6c;
+  --yz-border-color: #404040;
+  --yz-shadow-light: rgba(0, 0, 0, 0.3);
+  --yz-shadow-medium: rgba(0, 0, 0, 0.4);
+  --yz-shadow-heavy: rgba(0, 0, 0, 0.6);
+  --yz-overlay-bg: rgba(0, 0, 0, 0.7);
+  --yz-hover-bg: rgba(255, 255, 255, 0.1);
+  --yz-input-bg: #2d2d2d;
+  --yz-button-bg: #404040;
+  --yz-button-hover: #505050;
+  --yz-success: #4caf50;
+  --yz-warning: #ff9800;
+  --yz-danger: #f44336;
+  --yz-info: #00bcd4;
+}
+
+/* =============================================================================
+   微交互动画 - v1.3.0 新增
+   ============================================================================= */
+
+/* 按钮悬停动画 */
+.yz-toolbar-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.yz-toolbar-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.yz-toolbar-btn:active {
+  transform: translateY(0);
+}
+
+/* 卡片出现动画 */
+@keyframes yz-slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 结果卡片动画类 - 通过 JS 添加/移除 */
+.yz-result-card-animate {
+  animation: yz-slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 工具栏出现动画 */
+#yz-floating-toolbar {
+  animation: yz-slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 高亮元素动画 */
+.yz-highlighted,
+.inciting-text {
+  animation: yz-pulse 0.3s ease;
+}
+
+@keyframes yz-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+/* 煽动性文本高亮样式 */
+.yz-highlighted,
+.inciting-text {
+    border-radius: var(--yz-border-radius-md);  /* 统一使用中等圆角 */
+    padding: 0 2px;
+    transition: all 0.2s ease;
+    cursor: help;
+}
+
+.yz-highlighted:hover,
+.inciting-text:hover {
+    filter: brightness(0.9);
+}
+
+/* 浮动工具栏样式 */
+#yz-floating-toolbar {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif !important;
+    user-select: none !important;
+}
+
+#yz-floating-toolbar .yz-toolbar-btn {
+    outline: none !important;
+}
+
+#yz-floating-toolbar .yz-toolbar-btn:focus {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 工具提示样式 */
+#yz-toolbar-tooltip {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif !important;
+    font-size: 12px !important;
+    pointer-events: none !important;
+}
+
+/* 结果卡片样式 */
+.yz-result-card {
+    position: fixed !important;
+    background: var(--yz-bg-primary) !important;
+    border: 1px solid var(--yz-border-color) !important;
+    border-radius: var(--yz-border-radius-md) !important;  /* 统一使用中等圆角 */
+    box-shadow: 0 25px 50px -12px var(--yz-shadow-heavy) !important;
+    z-index: 2147483646 !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    color: var(--yz-text-primary) !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif !important;
+}
+
+.yz-result-content {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif !important;
+    color: #000 !important;
+}
+
+.yz-result-content strong {
+    font-weight: 600 !important;
+}
+
+.yz-result-content code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+}
+
+/* 工具栏暗色主题 */
+.yz-toolbar-dark {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.yz-toolbar-dark .yz-toolbar-btn {
+    color: #e2e8f0 !important;
+}
+
+.yz-toolbar-dark .yz-toolbar-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.yz-toolbar-dark .yz-toolbar-btn.copied {
+    background: var(--yz-success) !important;
+    color: white !important;
+}
+
+/* 工具提示暗色主题 */
+.yz-toolbar-dark + #yz-toolbar-tooltip,
+#yz-toolbar-tooltip.yz-tooltip-dark {
+    background: var(--yz-bg-secondary) !important;
+    color: var(--yz-text-primary) !important;
+    border: 1px solid var(--yz-border-color) !important;
+    box-shadow: 0 4px 12px var(--yz-shadow-medium) !important;
+}
+
+/* 结果卡片暗色主题 */
+.yz-result-card-dark {
+    background: var(--yz-bg-secondary) !important;
+    border-color: var(--yz-border-color) !important;
+    box-shadow: 0 25px 50px -12px var(--yz-shadow-heavy) !important;
+}
+
+.yz-result-card-dark .yz-result-header {
+    background: var(--yz-bg-tertiary) !important;
+    border-bottom-color: var(--yz-border-color) !important;
+}
+
+.yz-result-card-dark .yz-result-title {
+    color: var(--yz-text-primary) !important;
+}
+
+.yz-result-card-dark .yz-result-content {
+    color: var(--yz-text-primary) !important;
+}
+
+.yz-result-card-dark .yz-result-content h3 {
+    color: var(--yz-text-primary) !important;
+}
+
+.yz-result-card-dark .yz-result-content strong {
+    color: var(--yz-text-primary) !important;
+}
+
+.yz-result-card-dark .yz-close-btn {
+    color: var(--yz-text-secondary) !important;
+}
+
+.yz-result-card-dark .yz-close-btn:hover {
+    background: var(--yz-hover-bg) !important;
+    color: var(--yz-text-primary) !important;
+}
+
+.yz-result-card-dark .yz-copy-btn {
+    background: var(--yz-button-bg) !important;
+    color: var(--yz-text-secondary) !important;
+    border-color: var(--yz-border-color) !important;
+}
+
+.yz-result-card-dark .yz-copy-btn:hover {
+    background: var(--yz-button-hover) !important;
+    color: var(--yz-text-primary) !important;
+}
+
+.yz-result-card-dark .yz-export-btn {
+    background: var(--yz-button-bg) !important;
+    color: var(--yz-text-secondary) !important;
+    border-color: var(--yz-border-color) !important;
+}
+
+.yz-result-card-dark .yz-export-btn:hover {
+    background: var(--yz-button-hover) !important;
+    color: var(--yz-text-primary) !important;
+}
+
+.yz-result-card-dark .yz-resize-handle {
+    background: var(--yz-border-color) !important;
+}
+
+.yz-result-card-dark .yz-resize-handle:hover {
+    background: var(--yz-text-secondary) !important;
+}
+
+/* 加载动画 */
+@keyframes yz-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.yz-spinner {
+    animation: yz-spin 1s linear infinite;
+}
+
+/* 错误提示样式 */
+.yz-error-toast {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif !important;
+    animation: yz-slide-in 0.3s ease;
+}
+
+@keyframes yz-slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* 确保扩展元素不被页面样式覆盖 - 只重置特定的样式 */
+#yz-floating-toolbar,
+#yz-result-card,
+#yz-toolbar-tooltip {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif !important;
+}
+
+/* 恢复必要的样式 */
+#yz-floating-toolbar {
+    position: absolute !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-radius: var(--yz-border-radius-md) !important;  /* 统一使用中等圆角 */
+    padding: 8px 12px !important;
+    box-shadow: 0 8px 32px var(--yz-shadow-heavy) !important;
+    z-index: 2147483647 !important;
+    gap: 8px !important;
+    align-items: center !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+#yz-result-card {
+    position: fixed !important;
+    background: #fff !important;
+    border-radius: var(--yz-border-radius-md) !important;  /* 统一使用中等圆角 */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
+    z-index: 2147483646 !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+/* 遮罩层已移除 */
+
+/* 暗色模式适配 - 现在使用CSS变量，此段可保留作为备用 */
+@media (prefers-color-scheme: dark) {
+    .yz-result-content {
+        color: var(--yz-text-primary) !important;
+    }
+    
+    .yz-result-content h3 {
+        color: var(--yz-text-primary) !important;
+    }
+    
+    .yz-result-content p {
+        color: var(--yz-text-secondary) !important;
+    }
+    
+    .yz-close-btn {
+        color: var(--yz-text-secondary) !important;
+    }
+    
+    .yz-close-btn:hover {
+        background: var(--yz-hover-bg) !important;
+        color: var(--yz-text-primary) !important;
+    }
+}

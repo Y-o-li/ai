@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>言之有理 - 功能测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .test-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-icon {
+            font-size: 1.2em;
+        }
+
+        .test-content {
+            font-size: 1.1em;
+            line-height: 2;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 20px;
+        }
+
+        .test-case {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .test-case:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .case-title {
+            font-weight: bold;
+            color: #764ba2;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .case-label {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .label-inciting {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .label-normal {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .label-borderline {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .instruction {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .instruction h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .instruction ul {
+            margin-left: 20px;
+        }
+
+        .instruction li {
+            margin-bottom: 8px;
+        }
+
+        .test-info {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .badge-feature {
+            background: #667eea;
+            color: white;
+        }
+
+        .badge-expect {
+            background: #764ba2;
+            color: white;
+        }
+
+        .dynamic-content {
+            padding: 20px;
+            background: #fff3e0;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 2px dashed #ff9800;
+        }
+
+        .dynamic-content h4 {
+            color: #e65100;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 言之有理 - 功能测试页面</h1>
+            <p>用于测试四大核心功能：煽动性语言检测、事实核查、语义总结、中性化改写</p>
+            <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 8px;">
+                <strong style="color: #fff;">📊 词库版本 v2.0:</strong> 
+                <span style="color: #fff;">150+ 词汇 | Trie 树匹配 | 上下文理解 | 白名单过滤</span>
+            </div>
+        </header>
+
+        <!-- 功能1：煽动性语言检测 -->
+        <section class="test-section">
+            <div class="section-title">
+                <span class="section-icon">🔍</span>
+                功能一：煽动性语言检测
+            </div>
+
+            <div class="test-content">
+                <p>此功能会自动检测并高亮标记页面中的煽动性词汇和情绪化表达。</p>
+                <p>预期行为：煽动性词语会被高亮显示（黄色/红色背景）</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 1：明显的煽动性语言（高危句式）</div>
+                <span class="case-label label-inciting">应该被高亮</span>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">高亮检测</span>
+                    <span class="info-badge badge-expect">预期：危险句式 *1.8 + 程度副词 *1.3</span>
+                </div>
+                <p>这个群体简直是社会的毒瘤，必须彻底消灭他们！我们绝对不能容忍这种败类存在，应该让所有人一起行动起来，把他们赶出去！这种恶劣行为必须受到严厉惩罚，绝不手软！</p>
+                <div style="margin-top: 10px; padding: 8px; background: #e8f5e9; border-radius: 5px; font-size: 0.9em;">
+                    <strong>🔍 检测点：</strong>「必须」+「彻底」+「消灭」+「敌人」+「一起行动」→ 极高置信度
+                </div>
+            </div>
+            
+            <div class="test-case">
+                <div class="case-title">测试用例 2：带有攻击性的表述</div>
+                <span class="case-label label-inciting">应该被高亮</span>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">高亮检测</span>
+                    <span class="info-badge badge-expect">预期：号召性短语 *1.5</span>
+                </div>
+                <p>那些反对我们的人都是无知和愚蠢的，他们根本不配在这个社会立足！我们应该联合起来抵制他们的观点，让他们闭嘴！</p>
+                <div style="margin-top: 10px; padding: 8px; background: #e8f5e9; border-radius: 5px; font-size: 0.9em;">
+                    <strong>🔍 检测点：</strong>「联合起来」+「抵制」+「敌人」+「侮辱」
+                </div>
+            </div>
+            
+            <div class="test-case">
+                <div class="case-title">测试用例 3：政治煽动内容</div>
+                <span class="case-label label-inciting">应该被高亮</span>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">高亮检测</span>
+                    <span class="info-badge badge-expect">预期：政治敏感词 + 危险句式</span>
+                </div>
+                <p>我们必须坚决做到推翻这个腐败的政权，彻底铲除这些统治阶级的走狗！大家一起行动起来，发动革命！</p>
+                <div style="margin-top: 10px; padding: 8px; background: #e8f5e9; border-radius: 5px; font-size: 0.9em;">
+                    <strong>🔍 检测点：</strong>「坚决做到」+「推翻政府」+「彻底铲除」+「统治」+「革命」
+                </div>
+            </div>
+            
+            <div class="test-case">
+                <div class="case-title">测试用例 4：恐怖主义相关</div>
+                <span class="case-label label-inciting">应该被高亮</span>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">高亮检测</span>
+                    <span class="info-badge badge-expect">预期：恐怖主义词汇</span>
+                </div>
+                <p>极端组织计划发动恐怖袭击，使用人体炸弹进行自杀式攻击，这简直是惨无人道的暴行！</p>
+                <div style="margin-top: 10px; padding: 8px; background: #e8f5e9; border-radius: 5px; font-size: 0.9em;">
+                    <strong>🔍 检测点：</strong>「极端」+「恐怖袭击」+「人体炸弹」+「自杀式」+「惨无人道」
+                </div>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 5：否定句语境（应降权）</div>
+                <span class="case-label label-normal">不应/低权重高亮</span>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">高亮检测</span>
+                    <span class="info-badge badge-expect">预期：否定词降权 *0.3</span>
+                </div>
+                <p>我们不应该使用暴力解决问题，不能采取极端手段，更不要煽动仇恨和对立。和平对话才是最好的方式。</p>
+                <div style="margin-top: 10px; padding: 8px; background: #fff3e0; border-radius: 5px; font-size: 0.9em;">
+                    <strong>🔍 检测点：</strong>「不应该」+「不能」+「不要」→ 否定语境大幅降权
+                </div>
+            </div>
+            
+            <div class="test-case">
+                <div class="case-title">测试用例 6：疑问句语境（应降权）</div>
+                <span class="case-label label-normal">不应/低权重高亮</span>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">高亮检测</span>
+                    <span class="info-badge badge-expect">预期：疑问句降权 *0.5</span>
+                </div>
+                <p>什么是暴力？为什么会出现冲突？如何避免对抗？这些问题值得我们深入思考和研究。</p>
+                <div style="margin-top: 10px; padding: 8px; background: #fff3e0; border-radius: 5px; font-size: 0.9em;">
+                    <strong>🔍 检测点：</strong>「什么是」+「为什么」+「如何」→ 疑问句降权
+                </div>
+            </div>
+            
+            <div class="test-case">
+                <div class="case-title">测试用例 7：学术/新闻语境（白名单过滤）</div>
+                <span class="case-label label-normal">不应被高亮</span>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">高亮检测</span>
+                    <span class="info-badge badge-expect">预期：白名单过滤，完全不误报</span>
+                </div>
+                <p>研究表明，暴力行为会导致心理创伤。据统计，恐怖袭击在过去十年增加了 30%。据报道，某些地区存在种族歧视问题。专家认为，需要采取措施消除这些现象。</p>
+                <div style="margin-top: 10px; padding: 8px; background: #e3f2fd; border-radius: 5px; font-size: 0.9em;">
+                    <strong>✅ 白名单保护：</strong>「研究表明」+「据统计」+「据报道」+「专家认为」→ 学术语境不标记
+                </div>
+            </div>
+            
+            <div class="test-case">
+                <div class="case-title">测试用例 8：小说/历史语境（白名单过滤）</div>
+                <span class="case-label label-normal">不应被高亮</span>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">高亮检测</span>
+                    <span class="info-badge badge-expect">预期：白名单过滤</span>
+                </div>
+                <p>在小说中，主角决定推翻这个腐败的政权。历史上，这场革命导致了政权的更迭。电影里描绘了激烈的冲突和斗争场面。</p>
+                <div style="margin-top: 10px; padding: 8px; background: #e3f2fd; border-radius: 5px; font-size: 0.9em;">
+                    <strong>✅ 白名单保护：</strong>「在小说中」+「历史上」+「电影里」→ 文艺作品语境不标记
+                </div>
+            </div>
+
+            <div class="dynamic-content">
+                <h4>📌 动态内容测试区域</h4>
+                <p>点击下方按钮动态加载测试内容，测试插件的实时检测能力：</p>
+                <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                    <button class="btn" onclick="addDynamicContent('inciting')">➕ 添加煽动性内容</button>
+                    <button class="btn" onclick="addDynamicContent('negation')">➕ 添加否定句</button>
+                    <button class="btn" onclick="addDynamicContent('question')">➕ 添加疑问句</button>
+                    <button class="btn" onclick="addDynamicContent('academic')">➕ 添加学术语境</button>
+                    <button class="btn" onclick="clearDynamicContent()">🗑️ 清空所有动态内容</button>
+                </div>
+                <div id="dynamic-content-area" style="margin-top: 15px;"></div>
+            </div>
+        </section>
+
+        <!-- 功能2：事实核查 -->
+        <section class="test-section">
+            <div class="section-title">
+                <span class="section-icon">📊</span>
+                功能二：事实核查
+            </div>
+
+            <div class="test-content">
+                <p>选中文本后，使用事实核查功能验证信息的真实性。</p>
+                <p><strong>使用方法：</strong>选中下方测试文本 → 点击工具栏的"事实核查"按钮</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 1：疑似虚假信息</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">事实核查</span>
+                    <span class="info-badge badge-expect">预期: AI分析真实性</span>
+                </div>
+                <p>研究表明，每天喝十杯咖啡可以延长寿命50年，这个结论已经被全球100多家顶级医疗机构认证。</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 2：科学声明</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">事实核查</span>
+                    <span class="info-badge badge-expect">预期: AI分析真实性</span>
+                </div>
+                <p>地球围绕太阳公转的周期大约是365.25天，这被称为一个恒星年。</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 3：统计数据</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">事实核查</span>
+                    <span class="info-badge badge-expect">预期: AI分析数据来源</span>
+                </div>
+                <p>根据联合国人口基金会2023年的报告，全球人口已超过80亿，其中亚洲人口占比约为60%。</p>
+            </div>
+        </section>
+
+        <!-- 功能3：语义总结 -->
+        <section class="test-section">
+            <div class="section-title">
+                <span class="section-icon">📝</span>
+                功能三：语义总结
+            </div>
+
+            <div class="test-content">
+                <p>提取文本的核心观点和关键要点，生成简洁的总结。</p>
+                <p><strong>使用方法：</strong>选中下方长文本 → 点击工具栏的"语义总结"按钮</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 1：长段落总结</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">语义总结</span>
+                    <span class="info-badge badge-expect">预期: 提取核心观点</span>
+                </div>
+                <p>人工智能技术的快速发展正在深刻改变着我们的生活和工作方式。从智能助手到自动驾驶，从医疗诊断到金融分析，AI的应用场景日益广泛。然而，与此同时，我们也面临着数据隐私、算法偏见、就业影响等一系列挑战。因此，在推动AI技术进步的同时，我们必须建立健全的监管框架和伦理准则，确保技术的发展能够造福全人类，而不是带来新的风险和不确定性。这需要政府、企业、学术界和公众的共同努力，通过开放对话和协作，找到技术进步与社会福祉之间的平衡点。</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 2：多观点文本总结</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">语义总结</span>
+                    <span class="info-badge badge-expect">预期: 提炼不同观点</span>
+                </div>
+                <p>关于远程办公的利弊，不同专家持有不同看法。支持者认为，远程办公可以节省通勤时间，提高工作灵活性，降低企业运营成本，同时减少碳排放，对环境更加友好。反对者则指出，远程办公可能导致团队协作效率下降，员工社交隔离，工作与生活界限模糊，以及企业文化逐渐淡化。还有专家建议采取混合模式，在保持灵活性的同时，保留必要的面对面交流机会。综合各方观点，没有一种模式适合所有情况，关键是要根据企业文化和工作性质，找到最适合的平衡方案。</p>
+            </div>
+        </section>
+
+        <!-- 功能4：中性化改写 -->
+        <section class="test-section">
+            <div class="section-title">
+                <span class="section-icon">✏️</span>
+                功能四：中性化改写
+            </div>
+
+            <div class="test-content">
+                <p>将情绪化、主观性强的文本改写为客观、中性的表达。</p>
+                <p><strong>使用方法：</strong>选中下方带有强烈情绪的文本 → 点击工具栏的"中性化改写"按钮</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 1：强烈情绪改写</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">中性化改写</span>
+                    <span class="info-badge badge-expect">预期: 转为客观表述</span>
+                </div>
+                <p>这个糟糕的决定简直是一场灾难！完全是愚蠢和短视的表现，根本没有人会支持这种可笑的做法！</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 2：主观评价改写</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">中性化改写</span>
+                    <span class="info-badge badge-expect">预期: 转为事实陈述</span>
+                </div>
+                <p>这个产品太垃圾了，体验极差，完全就是在浪费时间和金钱，强烈建议大家不要购买！</p>
+            </div>
+
+            <div class="test-case">
+                <div class="case-title">测试用例 3：带有偏见表述改写</div>
+                <div class="test-info">
+                    <span class="info-badge badge-feature">中性化改写</span>
+                    <span class="info-badge badge-expect">预期: 转为中立观点</span>
+                </div>
+                <p>这个群体总是制造麻烦，他们的观点根本不值得考虑，我们应该完全忽视他们的声音。</p>
+            </div>
+        </section>
+
+        <!-- 使用说明 -->
+        <section class="test-section">
+            <div class="section-title">
+                <span class="section-icon">📖</span>
+                使用说明
+            </div>
+
+            <div class="instruction">
+                <h3>测试步骤：</h3>
+                <ul>
+                    <li><strong>步骤 1：</strong>确保"言之有理"插件已安装并启用</li>
+                    <li><strong>步骤 2：</strong>在Chrome中打开此测试页面（建议使用本地文件服务器，如 Live Server）</li>
+                    <li><strong>步骤 3：</strong>观察页面加载后，煽动性词汇是否自动被高亮标记</li>
+                    <li><strong>步骤 4：</strong>选中任意文本，会自动显示浮动工具栏</li>
+                    <li><strong>步骤 5：</strong>点击工具栏上的不同功能按钮进行测试</li>
+                    <li><strong>步骤 6：</strong>观察AI分析结果是否准确显示</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">功能对比：</h3>
+                <ul>
+                    <li><strong>煽动性语言检测：</strong>自动、实时、无需选中</li>
+                    <li><strong>事实核查：</strong>需要选中文本，验证信息真实性</li>
+                    <li><strong>语义总结：</strong>需要选中文本，提取核心观点</li>
+                    <li><strong>中性化改写：</strong>需要选中文本，改写为客观表达</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">注意事项：</h3>
+                <ul>
+                    <li>AI功能需要在设置页面配置API密钥（通义千问/智谱GLM/文心一言）</li>
+                    <li>首次使用可能需要等待几秒钟的API响应</li>
+                    <li>确保网络连接正常，API服务可访问</li>
+                    <li>测试结果仅供参考，不代表最终事实判断</li>
+                </ul>
+            </div>
+        </section>
+
+        <footer>
+            <p>© 2026 言之有理 - AI内容分析助手 | 功能测试页面 v1.0</p>
+            <p>如有问题或建议，请通过插件反馈渠道联系我们</p>
+        </footer>
+    </div>
+
+    <script>
+        // 动态添加测试内容（增强版）
+        function addDynamicContent(type = 'random') {
+            const area = document.getElementById('dynamic-content-area');
+            const timestamp = new Date().toLocaleTimeString();
+    
+            const testCases = {
+                inciting: [
+                    { text: "这些反对派简直是无耻之徒，必须给予最严厉的打击！", type: "高危句式", expect: "高亮" },
+                    { text: "这种极端的观点令人无法接受，必须予以严厉谴责！", type: "程度副词", expect: "高亮" },
+                    { text: "大家一起行动起来，推翻这个不公正的制度！", type: "号召性短语", expect: "高亮" },
+                    { text: "我们必须彻底铲除这些腐败分子，绝不手软！", type: "危险句式", expect: "高亮" },
+                    { text: "那些叛徒和走狗应该被消灭，这是所有人的责任！", type: "政治煽动", expect: "高亮" }
+                ],
+                negation: [
+                    { text: "我们不应该使用暴力解决问题，这是错误的做法。", type: "否定句", expect: "降权" },
+                    { text: "不能采取极端手段，不要煽动仇恨和对立。", type: "否定句", expect: "降权" },
+                    { text: "我不支持任何形式的恐怖主义和暴力行为。", type: "否定句", expect: "降权" }
+                ],
+                question: [
+                    { text: "什么是暴力？为什么会出现冲突？如何避免对抗？", type: "疑问句", expect: "降权" },
+                    { text: "难道我们必须用极端方式才能解决问题吗？", type: "疑问句", expect: "降权" },
+                    { text: "是否应该采取更强硬的手段？这是一个值得讨论的问题。", type: "疑问句", expect: "降权" }
+                ],
+                academic: [
+                    { text: "研究表明，接触暴力内容会影响青少年的心理健康。", type: "学术语境", expect: "白名单" },
+                    { text: "据统计，全球恐怖主义活动在过去五年有所增加。", type: "新闻语境", expect: "白名单" },
+                    { text: "据报道，某些地区存在严重的种族歧视问题。", type: "新闻语境", expect: "白名单" },
+                    { text: "专家认为，需要通过教育来消除偏见和歧视。", type: "学术语境", expect: "白名单" },
+                    { text: "在小说中，作者描绘了一场激烈的革命斗争。", type: "文艺语境", expect: "白名单" }
+                ]
+            };
+    
+            let selectedType = type;
+            if (type === 'random') {
+                const types = Object.keys(testCases);
+                selectedType = types[Math.floor(Math.random() * types.length)];
+            }
+    
+            const cases = testCases[selectedType];
+            const caseIndex = Math.floor(Math.random() * cases.length);
+            const testCase = cases[caseIndex];
+    
+            const newContent = document.createElement('div');
+            newContent.className = 'test-case';
+            newContent.innerHTML = `
+                <div class="case-title">动态内容 - ${timestamp}</div>
+                <span class="case-label label-borderline">${testCase.type}</span>
+                <p>${testCase.text}</p>
+                <div style="margin-top: 10px; padding: 8px; background: #e8f5e9; border-radius: 5px; font-size: 0.9em;">
+                    <strong>🎯 预期：</strong>${testCase.expect}
+                </div>
+            `;
+    
+            area.appendChild(newContent);
+                
+            // 滚动到新添加的内容
+            newContent.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    
+        // 清空动态内容
+        function clearDynamicContent() {
+            const area = document.getElementById('dynamic-content-area');
+            area.innerHTML = '';
+        }
+    
+        // 页面加载完成后的提示
+        window.addEventListener('load', function() {
+            console.log('🎯 言之有理测试页面已加载');
+            console.log('📝 测试功能：煽动性语言检测、事实核查、语义总结、中性化改写');
+            console.log('💡 提示：请确保插件已启用并配置了 API 密钥');
+            console.log('📊 词库版本：v2.0 (150+ 词汇)');
+            console.log('🌳 匹配算法：Trie 树');
+            console.log('🧠 上下文理解：已启用');
+            console.log('✅ 白名单过滤：已启用');
+        });
+    
+        // 添加键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+1-5: 快速添加不同类型内容
+            if (e.ctrlKey && e.key >= '1' && e.key <= '5') {
+                e.preventDefault();
+                const types = ['inciting', 'negation', 'question', 'academic', 'random'];
+                const typeNames = ['煽动性', '否定句', '疑问句', '学术', '随机'];
+                addDynamicContent(types[e.key - '1']);
+                console.log(`➕ 已添加${typeNames[e.key - '1']}内容`);
+            }
+            // Ctrl+D: 清空动态内容
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                clearDynamicContent();
+                console.log('🗑️ 已清空动态内容');
+            }
+        });
+    
+        // 显示快捷键提示
+        console.log('⌨️  快捷键：Ctrl+1~5 添加不同类型内容，Ctrl+D 清空');
+    </script>
+</body>
+</html>
